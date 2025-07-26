@@ -284,8 +284,10 @@ ast_t consume_modifier() {
 
 ast_t consume_and_expr() {
   ast_t ast = {.type = AND_EXPR, .children = NULL};
+  int c = 0;
   while (1) {
     add_child(&ast, consume_modifier());
+    c++;
     switch (peek_next()) {
     case ']':
     case '.':
@@ -299,6 +301,9 @@ ast_t consume_and_expr() {
     case ')':
     case '|':
     case EOF:
+      if (c == 1) {
+        return ast.children->child;
+      }
       return ast;
     }
   }
@@ -306,9 +311,14 @@ ast_t consume_and_expr() {
 
 ast_t consume_or_expr() {
   ast_t ast = {.type = OR_EXPR, .children = NULL};
+  int c = 0;
   while (1) {
     add_child(&ast, consume_and_expr());
+    c++;
     if (peek_next() != '|') {
+      if (c == 1) {
+        return ast.children->child;
+      }
       return ast;
     }
     consume_next();
