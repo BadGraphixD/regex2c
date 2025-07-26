@@ -3,6 +3,21 @@
  * which accepts any string which matches the regex string. The regex is truly
  * regular, so no backreferences, and also no capture groups.
  *
+ * The following special chars must be escaped in the regex:
+ * ()[]+*?\.|^
+ *
+ * The following chars do not need to be escaped
+ * 0-9a-zA-Z!"#$%&',/:;<=>@_`{}~
+ *
+ * The following escape codes exist:
+ * \n for newline character
+ * \r for carrier return
+ * \t for tab
+ * \s for space
+ * \x__ for specifying the char hex code
+ *
+ * All other characters are rejected!
+ *
  * The generated c code looks something like this:
  *
  * void parse() {
@@ -22,6 +37,7 @@
  */
 
 #include <err.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -132,8 +148,30 @@ int consume_next() {
   return c;
 }
 
-int reject(char *nt, char *err) {
-  errx(EXIT_FAILURE, "Rejected while parsing %s: %s", nt, err);
+int reject(char *nt, char *err, ...) {
+  va_list args;
+  va_start(args, err);
+  char *errf = NULL;
+  if (vasprintf(&errf, err, args) == -1) {
+    errx(EXIT_FAILURE, "Failed to print error message");
+  }
+  va_end(args);
+  errx(EXIT_FAILURE, "Rejected while parsing %s: %s", nt, errf);
+}
+
+int consume_hex_char() {
+  int c = consume_next();
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  }
+  if (c >= 'a' && c <= 'z') {
+    return c - 'a';
+  }
+  if (c >= 'A' && c <= 'Z') {
+    return c - 'A';
+  }
+  reject("escaped hex char", "unexpected char: '0x%hhx'", c);
+  return 0;
 }
 
 int consume_char_() {
@@ -153,12 +191,40 @@ int consume_char_() {
     case '?':
     case '\\':
       break;
+    case '0':
+      consume_next();
+      return 0;
+    case 't':
+      consume_next();
+      return 9;
+    case 'n':
+      consume_next();
+      return 10;
+    case 's':
+      consume_next();
+      return 32;
+    case 'r':
+      consume_next();
+      return 13;
+    case 'x':
+      consume_next();
+      int c = consume_hex_char();
+      c += consume_hex_char() * 10;
+      return c;
     default:
       // EOF and non-special chars cannot be escaped
-      reject("escaped char", "unexpected char after '\\'");
+      reject("escaped char", "unexpected char after '\\': '0x%hhx'",
+             peek_next());
     }
   }
-  return consume_next();
+  switch (peek_next()) {
+  case 0x21 ... 0x7e:
+    // Includes alphanumerics and (some) special (printable) chars.
+    return consume_next();
+  default:
+    reject("unescaped char", "unexpected char: '0x%hhx'", peek_next());
+    return 0;
+  }
 }
 
 ast_t consume_char() {
@@ -215,7 +281,7 @@ ast_t consume_class() {
     case '?':
     case EOF:
       // these special chars can never be inside a class at this points
-      reject("class", "unexpected special char or EOF");
+      reject("class", "unexpected char: '0x%hhx'", peek_next());
     case ']':
       consume_next();
       return ast;
@@ -253,7 +319,7 @@ ast_t consume_single() {
   case '+':
   case '?':
   case EOF:
-    reject("single", "unexpected special char");
+    reject("single", "unexpected char: '0x%hhx'", peek_next());
   default:
     return consume_char();
   }
@@ -297,7 +363,7 @@ ast_t consume_and_expr() {
     case '+':
     case '?':
       // this token can never come after a single
-      reject("and expr", "unexpected special char");
+      reject("and expr", "unexpected char: '0x%hhx'", peek_next());
     case ')':
     case '|':
     case EOF:
@@ -328,7 +394,9 @@ ast_t consume_or_expr() {
 ast_t consume_regex_expr() {
   ast_t ast = consume_or_expr();
   if (peek_next() != EOF) {
-    reject("regex expr", "unexpected char after expression (expected EOF)");
+    reject("regex expr",
+           "unexpected char after expression: '0x%hhx' (expected EOF)",
+           peek_next());
   }
   return ast;
 }
