@@ -4,29 +4,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int edge_idx(automaton_t *automaton, int node0, int node1) {
+  return node1 * automaton->max_node_count + node0;
+}
+
 void print_automaton(automaton_t *automaton) {
   printf("Automaton (max nodes = %d, node count = %d)\n",
          automaton->max_node_count, automaton->next_node_index);
-  for (int i = 0; i < automaton->max_node_count; i++) {
-    printf("%c%c #%d", automaton->start_index == i ? '>' : ' ',
-           automaton->nodes[i].is_end ? '*' : ' ', i);
-    edge_list_t *list = automaton->nodes[i].outgoing;
-    while (list != NULL) {
-      if (edge_is_epsilon(&list->edge)) {
-        printf(" ε->%d", list->edge.target);
-      } else if (edge_is_wildcard(&list->edge)) {
-        printf(" any->%d", list->edge.target);
-      } else {
-        printf(" %s->%d", print_char(list->edge.terminal), list->edge.target);
+
+  for (int node0 = 0; node0 < automaton->max_node_count; node0++) {
+    printf("%c%c #%d", automaton->start_index == node0 ? '>' : ' ',
+           automaton->nodes[node0].is_end ? '*' : ' ', node0);
+
+    for (int node1 = 0; node1 < automaton->max_node_count; node1++) {
+      int edge = edge_idx(automaton, node0, node1);
+
+      if (automaton->adjacency_matrix[edge].transitions[EPSILON_EDGE]) {
+        printf(" ε->%d", node1);
       }
-      list = list->next;
+
+      int is_wildcard = 1;
+      for (int t = 0; t < 256; t++) {
+        if (!automaton->adjacency_matrix[edge].transitions[t]) {
+          is_wildcard = 0;
+          break;
+        }
+      }
+
+      if (is_wildcard) {
+        printf(" any->%d", node1);
+      } else {
+        for (int t = 0; t < 256; t++) {
+          if (automaton->adjacency_matrix[edge].transitions[t]) {
+            printf(" %s->%d", print_char(t), node1);
+          }
+        }
+      }
     }
     printf("\n");
   }
 }
 
 automaton_t create_automaton(int node_count) {
-  automaton_t result = {.nodes = calloc(node_count, sizeof(node_t)),
+  automaton_t result = {.adjacency_matrix =
+                            calloc(node_count * node_count, sizeof(edge_t)),
+                        .nodes = calloc(node_count, sizeof(node_t)),
                         .max_node_count = node_count,
                         .next_node_index = 0,
                         .start_index = 0};
@@ -35,25 +57,15 @@ automaton_t create_automaton(int node_count) {
 
 int create_node(automaton_t *automaton) { return automaton->next_node_index++; }
 
-void connect_nodes(automaton_t *automaton, int node0, int node1, char terminal,
-                   char is_epsilon, char is_wildcard) {
-  edge_list_t *list = malloc(sizeof(edge_list_t));
-  list->next = automaton->nodes[node0].outgoing;
-  list->edge.flags = 0;
+void connect_nodes(automaton_t *automaton, int node0, int node1,
+                   unsigned char terminal, bool_t is_epsilon) {
+  int transition = terminal;
   if (is_epsilon) {
-    list->edge.flags |= 0x1;
+    transition = EPSILON_EDGE;
   }
-  if (is_wildcard) {
-    list->edge.flags |= 0x2;
-  }
-  list->edge.terminal = terminal;
-  list->edge.target = node1;
-  automaton->nodes[node0].outgoing = list;
+  automaton->adjacency_matrix[edge_idx(automaton, node0, node1)]
+      .transitions[transition] = 1;
 }
-
-int edge_is_epsilon(edge_t *edge) { return edge->flags & 0x1; }
-
-int edge_is_wildcard(edge_t *edge) { return edge->flags & 0x2; }
 
 automaton_t determinize(automaton_t *automaton) {
   // TODO: write this

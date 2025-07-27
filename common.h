@@ -1,3 +1,7 @@
+#pragma once
+
+typedef char bool_t;
+
 /**
  * Prints the given ASCII code {@code c} into a string. {@code -1} is
  * interpreted as EOF and printed as such. Printable characters are printed like

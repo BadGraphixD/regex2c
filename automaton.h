@@ -1,10 +1,3 @@
-// TODO: check if we want this datastructure for the automaton
-//  alternatives:
-//  - edge list (while nodes are in array)
-//  - adjacency matrix
-//  Nodes and edges can be evaluated by traversing the ast once before automaton
-//  construction.
-
 /**
  * We need to:
  *
@@ -15,25 +8,23 @@
  * 4. Convert the DFA into c code
  */
 
-struct edge_list;
+#pragma once
 
-typedef struct node {
-  struct edge_list *outgoing;
-  int is_end;
-} node_t;
+#include "common.h"
+
+#define EPSILON_EDGE 256
+#define MAX_EDGES 257
 
 typedef struct edge {
-  int target;
-  unsigned char terminal;
-  unsigned char flags;
+  bool_t transitions[MAX_EDGES];
 } edge_t;
 
-typedef struct edge_list {
-  struct edge_list *next;
-  edge_t edge;
-} edge_list_t;
+typedef struct node {
+  bool_t is_end;
+} node_t;
 
 typedef struct automaton {
+  edge_t *adjacency_matrix;
   node_t *nodes;
   int max_node_count;
   int next_node_index;
@@ -60,18 +51,8 @@ int create_node(automaton_t *automaton);
  * node0} and {@code node1}). The connection is either an epsilon connection (if
  * {@code is_epsilon != 0}) or a normal connection with the {@code terminal}.
  */
-void connect_nodes(automaton_t *automaton, int node0, int node1, char terminal,
-                   char is_epsilon, char is_wildcard);
-
-/**
- * Returns whether or not an edge is an epsilon-transition.
- */
-int edge_is_epsilon(edge_t *edge);
-
-/**
- * Returns whether or not an edge is an wildcard-transition.
- */
-int edge_is_wildcard(edge_t *edge);
+void connect_nodes(automaton_t *automaton, int node0, int node1,
+                   unsigned char terminal, bool_t is_epsilon);
 
 /**
  * Creates a new automaton, which is equivalent to the given {@code automaton},

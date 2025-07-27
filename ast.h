@@ -1,3 +1,5 @@
+#pragma once
+
 typedef enum ast_type {
   OR_EXPR,       // a|b
   AND_EXPR,      // abc

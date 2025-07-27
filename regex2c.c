@@ -189,7 +189,7 @@ void consume_char_or_range(unsigned char *terminals) {
 
 ast_t consume_class() {
   consume_next(); // consume '['
-  ast_t ast = {.type = CLASS, .terminals = calloc(256, sizeof(char))};
+  ast_t ast = {.type = CLASS, .terminals = calloc(256, sizeof(unsigned char))};
   if (peek_next() == '^') {
     consume_next();
     ast.type = INV_CLASS;
@@ -374,8 +374,8 @@ void convert_ast_or_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
     int inner_start, inner_end;
     convert_ast_to_automaton_nodes(automaton, &list->child, &inner_start,
                                    &inner_end);
-    connect_nodes(automaton, *start, inner_start, 0, 1, 0);
-    connect_nodes(automaton, inner_end, *end, 0, 1, 0);
+    connect_nodes(automaton, *start, inner_start, 0, 1);
+    connect_nodes(automaton, inner_end, *end, 0, 1);
     list = list->next;
   }
 }
@@ -391,7 +391,7 @@ void convert_ast_and_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
     int new_end;
     convert_ast_to_automaton_nodes(automaton, &children->child, start,
                                    &new_end);
-    connect_nodes(automaton, new_end, old_start, 0, 1, 0);
+    connect_nodes(automaton, new_end, old_start, 0, 1);
     children = children->next;
   }
 }
@@ -400,7 +400,7 @@ void convert_ast_char_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
                                          int *start, int *end) {
   *start = create_node(automaton);
   *end = create_node(automaton);
-  connect_nodes(automaton, *start, *end, ast->terminal, 0, 0);
+  connect_nodes(automaton, *start, *end, ast->terminal, 0);
 }
 
 void convert_ast_class_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
@@ -409,7 +409,7 @@ void convert_ast_class_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
   *end = create_node(automaton);
   for (int i = 0; i < 256; i++) {
     if (ast->terminals[i] != inverted) {
-      connect_nodes(automaton, *start, *end, i, 0, 0);
+      connect_nodes(automaton, *start, *end, i, 0);
     }
   }
 }
@@ -422,25 +422,27 @@ void convert_ast_star_plus_to_automaton_nodes(automaton_t *automaton,
   int inner_start, inner_end;
   convert_ast_to_automaton_nodes(automaton, &ast->children->child, &inner_start,
                                  &inner_end);
-  connect_nodes(automaton, inner_end, inner_start, 0, 1, 0);
-  connect_nodes(automaton, *start, inner_start, 0, 1, 0);
-  connect_nodes(automaton, inner_end, *end, 0, 1, 0);
+  connect_nodes(automaton, inner_end, inner_start, 0, 1);
+  connect_nodes(automaton, *start, inner_start, 0, 1);
+  connect_nodes(automaton, inner_end, *end, 0, 1);
   if (is_star) {
-    connect_nodes(automaton, *start, *end, 0, 1, 0);
+    connect_nodes(automaton, *start, *end, 0, 1);
   }
 }
 
 void convert_ast_opt_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
                                         int *start, int *end) {
   convert_ast_to_automaton_nodes(automaton, &ast->children->child, start, end);
-  connect_nodes(automaton, *start, *end, 0, 1, 0);
+  connect_nodes(automaton, *start, *end, 0, 1);
 }
 
 void convert_ast_wildcard_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
                                              int *start, int *end) {
   *start = create_node(automaton);
   *end = create_node(automaton);
-  connect_nodes(automaton, *start, *end, 0, 0, 1);
+  for (int i = 0; i < 256; i++) {
+    connect_nodes(automaton, *start, *end, i, 0);
+  }
 }
 
 void convert_ast_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
