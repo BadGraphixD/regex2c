@@ -32,3 +32,4 @@ void print_ast_indented(ast_t *ast, int indent);
 void print_ast_children(ast_t *ast, int indent);
 void print_ast_indented(ast_t *ast, int indent);
 void print_ast(ast_t *ast);
+void delete_ast(ast_t ast);

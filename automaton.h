@@ -65,3 +65,8 @@ automaton_t determinize(automaton_t *automaton);
  * but is minimal. The given {@code automaton} must be deterministic.
  */
 automaton_t minimize(automaton_t *automaton);
+
+/**
+ * Deletes a given {@code automaton} and frees all its related memory.
+ */
+void delete_automaton(automaton_t automaton);

@@ -74,3 +74,16 @@ void print_ast_indented(ast_t *ast, int indent) {
 }
 
 void print_ast(ast_t *ast) { print_ast_indented(ast, 0); }
+
+void delete_ast(ast_t ast) {
+  if (ast.type == CLASS || ast.type == INV_CLASS) {
+    free(ast.terminals);
+  }
+  ast_child_list_t *children = ast.children;
+  while (children != NULL) {
+    ast_child_list_t *next = children->next;
+    delete_ast(children->child);
+    free(children);
+    children = next;
+  }
+}

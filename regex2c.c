@@ -491,8 +491,13 @@ int main() {
   consume_next();
   ast_t ast = consume_regex_expr();
   print_ast(&ast);
+
   automaton_t automaton = convert_ast_to_automaton(&ast);
+  delete_ast(ast);
   print_automaton(&automaton);
+
   automaton_t d_automaton = determinize(&automaton);
+  delete_automaton(automaton);
   print_automaton(&d_automaton);
+  delete_automaton(d_automaton);
 }

@@ -100,6 +100,25 @@ dfa_state_t create_dfa_state(automaton_t *automaton, int index) {
   return state;
 }
 
+void delete_dfa_state(dfa_state_t state) {
+  free(state.nodes);
+  dfa_edge_list_t *list = state.outgoing;
+  while (list != NULL) {
+    dfa_edge_list_t *next = list->next;
+    free(list);
+    list = next;
+  }
+}
+
+void delete_dfa_state_list(dfa_state_list_t *list) {
+  while (list != NULL) {
+    dfa_state_list_t *next = list->next;
+    delete_dfa_state(list->state);
+    free(list);
+    list = next;
+  }
+}
+
 void set_dfa_state_node(dfa_state_t *state, int node) {
   state->nodes[node] = 1;
 }
@@ -252,6 +271,7 @@ automaton_t dfa_state_list_to_automaton(dfa_state_list_t *states) {
     automaton.nodes[list->state.index].is_end = list->state.is_end;
     list = list->next;
   }
+  delete_dfa_state_list(states);
   return automaton;
 }
 
@@ -275,13 +295,10 @@ automaton_t determinize(automaton_t *automaton) {
             existing_state = &d_states->state;
             state_changed = 1;
             next_idx++;
+          } else {
+            delete_dfa_state(new_state);
           }
           connect_dfa_states(&d_states_iter->state, existing_state, t);
-        }
-        if (!dfa_state_empty(automaton, &new_state) &&
-            !dfa_state_list_contains_state(automaton, d_states, &new_state)) {
-          d_states = create_dfa_state_list(new_state, d_states);
-          state_changed = 1;
         }
       }
       d_states_iter = d_states_iter->next;
@@ -293,4 +310,9 @@ automaton_t determinize(automaton_t *automaton) {
 automaton_t minimize(automaton_t *automaton) {
   // TODO: write this
   return *automaton;
+}
+
+void delete_automaton(automaton_t automaton) {
+  free(automaton.adjacency_matrix);
+  free(automaton.nodes);
 }
