@@ -493,4 +493,6 @@ int main() {
   print_ast(&ast);
   automaton_t automaton = convert_ast_to_automaton(&ast);
   print_automaton(&automaton);
+  automaton_t d_automaton = determinize(&automaton);
+  print_automaton(&d_automaton);
 }
