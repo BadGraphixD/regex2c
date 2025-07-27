@@ -73,4 +73,4 @@ void print_ast_indented(ast_t *ast, int indent) {
   }
 }
 
-void print_ast(ast_t ast) { print_ast_indented(&ast, 0); }
+void print_ast(ast_t *ast) { print_ast_indented(ast, 0); }

@@ -19,12 +19,13 @@ struct edge_list;
 
 typedef struct node {
   struct edge_list *outgoing;
+  int is_end;
 } node_t;
 
 typedef struct edge {
   int target;
-  char is_epsilon;
-  char terminal;
+  unsigned char terminal;
+  unsigned char flags;
 } edge_t;
 
 typedef struct edge_list {
@@ -36,6 +37,7 @@ typedef struct automaton {
   node_t *nodes;
   int max_node_count;
   int next_node_index;
+  int start_index;
 } automaton_t;
 
 /**
@@ -59,7 +61,17 @@ int create_node(automaton_t *automaton);
  * {@code is_epsilon != 0}) or a normal connection with the {@code terminal}.
  */
 void connect_nodes(automaton_t *automaton, int node0, int node1, char terminal,
-                   char is_epsilon);
+                   char is_epsilon, char is_wildcard);
+
+/**
+ * Returns whether or not an edge is an epsilon-transition.
+ */
+int edge_is_epsilon(edge_t *edge);
+
+/**
+ * Returns whether or not an edge is an wildcard-transition.
+ */
+int edge_is_wildcard(edge_t *edge);
 
 /**
  * Creates a new automaton, which is equivalent to the given {@code automaton},
