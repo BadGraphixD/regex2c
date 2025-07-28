@@ -2,4 +2,7 @@
 
 *.o
 
+pattern.c
+
 regex2c
+pattern_matcher

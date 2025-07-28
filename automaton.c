@@ -318,6 +318,11 @@ bool_t nodes_equivalent(bool_t *stm, int node0, int node1, int *partition) {
     int dest0 = stm[node0 * 256 + t];
     int dest1 = stm[node1 * 256 + t];
     if (partition[dest0] != partition[dest1]) {
+      if (PRINT_DEBUG >= 2) {
+        printf("Nodes %d and %d different because targets %d and %d are in "
+               "different partitions\n",
+               node0, node1, dest0, dest1);
+      }
       return 0;
     }
   }
@@ -351,6 +356,13 @@ bool_t partitions_equivalent(int *p0, int *p1, int N) {
   return 1;
 }
 
+void print_partition(int *p, int N) {
+  for (int i = 0; i < N; i++) {
+    printf(" %d", p[i]);
+  }
+  printf("\n");
+}
+
 automaton_t create_automaton_from_partition(automaton_t *automaton,
                                             int *partition, int node_count) {
   automaton_t result = create_automaton(node_count);
@@ -382,8 +394,13 @@ automaton_t minimize(automaton_t *automaton) {
   bool_t *stm = create_state_transition_matrix(automaton);
 
   // initial node partition (end state vs normal state)
-  for (int i = 0; i < automaton->max_node_count; i++) {
+  for (int i = 0; i < N; i++) {
     partition0[i] = automaton->nodes[i].is_end ? 0 : 1;
+  }
+
+  if (PRINT_DEBUG >= 2) {
+    printf("Initial partition:");
+    print_partition(partition0, N);
   }
 
   while (1) {
@@ -391,30 +408,60 @@ automaton_t minimize(automaton_t *automaton) {
 
     int i = 0;
     while (i < N) {
+      if (PRINT_DEBUG >= 2) {
+        printf("\n\n\nNew round, starting from %d:\n", i);
+        printf("This is the old partition:");
+        print_partition(partition0, N);
+      }
       partition1[i] = next_partition_idx;
       int i_next = N;
       for (int j = i + 1; j < N; j++) {
+        if (PRINT_DEBUG >= 2) {
+          printf("Checking nodes i=%d and j=%d:   ", i, j);
+        }
         if (partition1[j] >= 0) {
+          if (PRINT_DEBUG >= 2) {
+            printf("Node j=%d already in p=%d\n", j, partition1[j]);
+          }
           // that node is already partitioned
           continue;
         }
         if (partition0[i] == partition0[j] &&
             nodes_equivalent(stm, i, j, partition0)) {
           // nodes are equivalent -> put into same partition
+          if (PRINT_DEBUG >= 2) {
+            printf("Nodes equivalent\n");
+          }
           partition1[j] = next_partition_idx;
         } else if (i_next == N) {
           // nodes are not equivalent -> create new partition and
           // start at this node
-          next_partition_idx++;
           i_next = j;
+          if (PRINT_DEBUG >= 2) {
+            printf("Nodes not equivalent, let's start at %d next round :)\n",
+                   i_next);
+          }
+        } else if (PRINT_DEBUG >= 2) {
+          printf("Nodes not equivalent\n");
         }
       }
       i = i_next;
+      next_partition_idx++;
+
+      if (PRINT_DEBUG >= 2) {
+        printf("This is the new partition:");
+        print_partition(partition1, N);
+      }
+    }
+
+    if (PRINT_DEBUG >= 2) {
+      printf("This is the completed partition:");
+      print_partition(partition1, N);
     }
 
     if (partitions_equivalent(partition0, partition1, N)) {
       automaton_t result = create_automaton_from_partition(
-          automaton, partition1, next_partition_idx + 1);
+          automaton, partition1, next_partition_idx);
 
       free(partition0);
       free(partition1);

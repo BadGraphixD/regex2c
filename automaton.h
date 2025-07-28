@@ -70,3 +70,8 @@ automaton_t minimize(automaton_t *automaton);
  * Deletes a given {@code automaton} and frees all its related memory.
  */
 void delete_automaton(automaton_t automaton);
+
+/**
+ * Creates a state transition matrix for the given {@code automaton}.
+ */
+bool_t *create_state_transition_matrix(automaton_t *automaton);

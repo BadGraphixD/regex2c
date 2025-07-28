@@ -11,12 +11,6 @@ void add_child(ast_t *ast, ast_t child) {
   ast->children = list;
 }
 
-void print_indent(int indent) {
-  while (indent-- > 0) {
-    printf(" ");
-  }
-}
-
 void print_ast_indented(ast_t *ast, int indent);
 
 void print_ast_children(ast_t *ast, int indent) {

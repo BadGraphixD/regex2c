@@ -29,3 +29,9 @@ char *print_char(int c) {
   }
   return result;
 }
+
+void print_indent(int indent) {
+  while (indent-- > 0) {
+    printf(" ");
+  }
+}

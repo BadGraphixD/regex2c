@@ -1,5 +1,7 @@
 #pragma once
 
+#define PRINT_DEBUG 0
+
 typedef char bool_t;
 
 /**
@@ -17,3 +19,4 @@ typedef char bool_t;
  * \?________
  */
 char *print_char(int c);
+void print_indent(int indent);

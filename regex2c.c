@@ -22,16 +22,34 @@
  * The generated c code looks something like this:
  *
  * void parse() {
- *   switch (next_char()) {
- *     case '0' ... '9':
- *       accept();
- *     default:
- *       reject();
+ *   int state = 0;
+ *   while (1) {
+ *     switch (state) {
+ *     case 0:
+ *       switch (consume_next()) {
+ *         case 97:
+ *           state = 1;
+ *           continue;
+ *         default:
+ *           reject();
+ *           continue;
+ *       }
+ *     }
+ *     case 1:
+ *       switch (consume_next()) {
+ *         case -1:
+ *           accept();
+ *           continue;
+ *         default:
+ *           reject();
+ *           continue;
+ *       }
+ *     }
  *   }
  * }
  *
  * It depends on (but does not implement) the functions accept(), reject() and
- * next_char(). The goal is also to generate a minimal automata (minimal c
+ * consume_next(). The goal is also to generate a minimal automata (minimal c
  * code).
  *
  * @author Florian Malicky
@@ -487,25 +505,111 @@ automaton_t convert_ast_to_automaton(ast_t *ast) {
   return automaton;
 }
 
+void print_automaton_to_c_code(automaton_t automaton) {
+  printf("extern void accept();\n");
+  printf("extern void reject();\n");
+  printf("extern int consume_next();\n");
+  printf("void parse() {\n"); // YES
+  print_indent(2);
+  printf("int state = %d;\n", automaton.start_index);
+  print_indent(2);
+  printf("while (1) {\n"); // YES
+
+  bool_t *stm = create_state_transition_matrix(&automaton);
+
+  print_indent(4);
+  printf("switch (state) {\n"); // YES
+
+  for (int state = 0; state < automaton.max_node_count; state++) {
+    print_indent(4);
+    printf("case %d:\n", state);
+    print_indent(6);
+    printf("switch (consume_next()) {\n"); // YES
+
+    for (int t = 0; t < 256; t++) {
+      int range_start = t;
+      int target = stm[state * 256 + t];
+
+      if (target >= 0) {
+        while (t + 1 < 256 && stm[state * 256 + (t + 1)] == target) {
+          t++;
+        }
+
+        // Add transitions for all defined edges
+        print_indent(8);
+        if (range_start == t) {
+          printf("case %d:\n", t);
+        } else {
+          printf("case %d ... %d:\n", range_start, t);
+        }
+        print_indent(10);
+        printf("state = %d;\n", target);
+        print_indent(10);
+        printf("continue;\n");
+      }
+    }
+
+    // When this state is an end state, EOF is accepted
+    if (automaton.nodes[state].is_end) {
+      print_indent(8);
+      printf("case -1:\n");
+      print_indent(10);
+      printf("accept();\n");
+      print_indent(10);
+      printf("continue;\n");
+    }
+
+    // Reject if there is no transition for that terminal-state combo
+    print_indent(8);
+    printf("default:\n");
+    print_indent(10);
+    printf("reject();\n");
+    print_indent(10);
+    printf("continue;\n");
+
+    print_indent(6);
+    printf("}\n"); // YES
+  }
+
+  print_indent(4);
+  printf("}\n"); // YES
+
+  print_indent(2);
+  printf("}\n"); // YES
+  printf("}\n"); // YES
+}
+
 int main() {
   consume_next();
   ast_t ast = consume_regex_expr();
-  print_ast(&ast);
+  if (PRINT_DEBUG >= 1) {
+    print_ast(&ast);
+  }
 
   automaton_t automaton = convert_ast_to_automaton(&ast);
   delete_ast(ast);
-  printf("NFA: ");
-  print_automaton(&automaton);
+  if (PRINT_DEBUG >= 1) {
+    printf("NFA: ");
+    print_automaton(&automaton);
+  }
 
   automaton_t d_automaton = determinize(&automaton);
   delete_automaton(automaton);
-  printf("DFA: ");
-  print_automaton(&d_automaton);
+  if (PRINT_DEBUG >= 1) {
+    printf("DFA: ");
+    print_automaton(&d_automaton);
+  }
 
   automaton_t m_automaton = minimize(&d_automaton);
   delete_automaton(d_automaton);
-  printf("Minimal DFA: ");
-  print_automaton(&m_automaton);
+  if (PRINT_DEBUG >= 1) {
+    printf("Minimal DFA: ");
+    print_automaton(&m_automaton);
+  }
+
+  if (PRINT_DEBUG == 0) {
+    print_automaton_to_c_code(m_automaton);
+  }
 
   delete_automaton(m_automaton);
 }

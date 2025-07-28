@@ -27,7 +27,6 @@ typedef struct ast_child_list {
 } ast_child_list_t;
 
 void add_child(ast_t *ast, ast_t child);
-void print_indent(int indent);
 void print_ast_indented(ast_t *ast, int indent);
 void print_ast_children(ast_t *ast, int indent);
 void print_ast_indented(ast_t *ast, int indent);
