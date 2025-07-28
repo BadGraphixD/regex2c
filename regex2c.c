@@ -494,10 +494,18 @@ int main() {
 
   automaton_t automaton = convert_ast_to_automaton(&ast);
   delete_ast(ast);
+  printf("NFA: ");
   print_automaton(&automaton);
 
   automaton_t d_automaton = determinize(&automaton);
   delete_automaton(automaton);
+  printf("DFA: ");
   print_automaton(&d_automaton);
+
+  automaton_t m_automaton = minimize(&d_automaton);
   delete_automaton(d_automaton);
+  printf("Minimal DFA: ");
+  print_automaton(&m_automaton);
+
+  delete_automaton(m_automaton);
 }

@@ -1,6 +1,7 @@
 #include "automaton.h"
 #include "common.h"
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -307,9 +308,127 @@ automaton_t determinize(automaton_t *automaton) {
   return dfa_state_list_to_automaton(d_states);
 }
 
+/**
+ * Returns whether or not the transitions from the given {@code node0} and
+ * {@code node1} result in the same partition for every terminal.
+ * (See Moore's Algorithm)
+ */
+bool_t nodes_equivalent(bool_t *stm, int node0, int node1, int *partition) {
+  for (int t = 0; t < 256; t++) {
+    int dest0 = stm[node0 * 256 + t];
+    int dest1 = stm[node1 * 256 + t];
+    if (partition[dest0] != partition[dest1]) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+bool_t *create_state_transition_matrix(automaton_t *automaton) {
+  int N = automaton->max_node_count;
+  size_t stm_size = N * 256 * sizeof(bool_t);
+  bool_t *stm = malloc(stm_size);
+  memset(stm, 0xff, stm_size);
+  for (int start = 0; start < N; start++) {
+    for (int end = 0; end < N; end++) {
+      for (int t = 0; t < 256; t++) {
+        if (automaton->adjacency_matrix[edge_idx(automaton, start, end)]
+                .transitions[t]) {
+          stm[start * 256 + t] = end;
+        }
+      }
+    }
+  }
+  return stm;
+}
+
+bool_t partitions_equivalent(int *p0, int *p1, int N) {
+  for (int i = 0; i < N; i++) {
+    if (p0[i] != p1[i]) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+automaton_t create_automaton_from_partition(automaton_t *automaton,
+                                            int *partition, int node_count) {
+  automaton_t result = create_automaton(node_count);
+  int old_N = automaton->max_node_count;
+  for (int i = 0; i < old_N; i++) {
+    for (int j = 0; j < old_N; j++) {
+      for (int t = 0; t < 256; t++) {
+        if (automaton->adjacency_matrix[edge_idx(automaton, i, j)]
+                .transitions[t]) {
+          connect_nodes(&result, partition[i], partition[j], t, 0);
+        }
+      }
+    }
+    if (automaton->nodes[i].is_end) {
+      result.nodes[partition[i]].is_end = 1;
+    }
+  }
+  return result;
+}
+
 automaton_t minimize(automaton_t *automaton) {
-  // TODO: write this
-  return *automaton;
+  int N = automaton->max_node_count;
+  size_t partition_size = N * sizeof(int);
+  int *partition0 = malloc(partition_size);
+  int *partition1 = malloc(partition_size);
+  // set all values to -1
+  memset(partition0, 0xff, partition_size);
+  memset(partition1, 0xff, partition_size);
+  bool_t *stm = create_state_transition_matrix(automaton);
+
+  // initial node partition (end state vs normal state)
+  for (int i = 0; i < automaton->max_node_count; i++) {
+    partition0[i] = automaton->nodes[i].is_end ? 0 : 1;
+  }
+
+  while (1) {
+    int next_partition_idx = 0;
+
+    int i = 0;
+    while (i < N) {
+      partition1[i] = next_partition_idx;
+      int i_next = N;
+      for (int j = i + 1; j < N; j++) {
+        if (partition1[j] >= 0) {
+          // that node is already partitioned
+          continue;
+        }
+        if (partition0[i] == partition0[j] &&
+            nodes_equivalent(stm, i, j, partition0)) {
+          // nodes are equivalent -> put into same partition
+          partition1[j] = next_partition_idx;
+        } else if (i_next == N) {
+          // nodes are not equivalent -> create new partition and
+          // start at this node
+          next_partition_idx++;
+          i_next = j;
+        }
+      }
+      i = i_next;
+    }
+
+    if (partitions_equivalent(partition0, partition1, N)) {
+      automaton_t result = create_automaton_from_partition(
+          automaton, partition1, next_partition_idx + 1);
+
+      free(partition0);
+      free(partition1);
+      free(stm);
+
+      return result;
+    }
+
+    // swap partitions and reset one
+    int *tmp = partition0;
+    partition0 = partition1;
+    partition1 = tmp;
+    memset(partition1, 0xff, partition_size);
+  }
 }
 
 void delete_automaton(automaton_t automaton) {
