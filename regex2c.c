@@ -87,9 +87,23 @@ int reject(char *err, ...) {
   errx(EXIT_FAILURE, "Rejected at char %d: %s", char_pos, errf);
 }
 
+extern bool_t is_end(int c) {
+  switch (c) {
+  case EOF:
+  case '\n':
+  case '\r':
+  case '\t':
+  case '\0':
+  case ' ':
+    return 1;
+  default:
+    return 0;
+  }
+}
+
 int main() {
   consume_next();
-  ast_t ast = consume_regex_expr_until_eof();
+  ast_t ast = consume_regex_expr();
   if (PRINT_DEBUG >= 1) {
     print_ast(&ast);
   }

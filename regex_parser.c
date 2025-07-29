@@ -11,6 +11,7 @@
 extern int peek_next();
 extern int consume_next();
 extern int reject(char *err, ...);
+extern bool_t is_end(int c);
 
 int consume_hex_char() {
   int c = consume_next();
@@ -238,11 +239,17 @@ ast_t consume_and_expr() {
       reject("and expr: unexpected char: '%s'", print_char(peek_next()));
     case ')':
     case '|':
-    case EOF:
       if (c == 1) {
         return ast.children->child;
       }
       return ast;
+    default:
+      if (is_end(peek_next())) {
+        if (c == 1) {
+          return ast.children->child;
+        }
+        return ast;
+      }
     }
   }
 }
@@ -263,10 +270,11 @@ ast_t consume_or_expr() {
   }
 }
 
-ast_t consume_regex_expr_until_eof() {
+ast_t consume_regex_expr() {
   ast_t ast = consume_or_expr();
-  if (peek_next() != EOF) {
-    reject("regex ex: unexpected char after expression: '%s' (expected EOF)",
+  if (!is_end(peek_next())) {
+    reject("regex ex: unexpected char after expression: '%s' (expected ending "
+           "character)",
            print_char(peek_next()));
   }
   return ast;

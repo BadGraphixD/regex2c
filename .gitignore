@@ -1,8 +1,5 @@
-/out/
-
 *.o
-
-pattern.c
-
 regex2c
-pattern_matcher
+
+/test/pattern.c
+/test/pattern_matcher

@@ -14,7 +14,7 @@ pattern_matcher.o: pattern_matcher.c
 pattern.o: pattern.c
 
 pattern.c: pattern.regex
-	cat pattern.regex | tr -d '\n' | ../regex2c >pattern.c
+	../regex2c <pattern.regex >pattern.c
 
 clean:
 	rm -f *.o pattern.c pattern_matcher

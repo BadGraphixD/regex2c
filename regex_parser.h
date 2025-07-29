@@ -13,5 +13,11 @@
  * int peek_next();
  * int consume_next();
  * int reject(char *err, ...);
+ * bool_t is_end(int c);
+ *
+ * peek_next    returns the next char, without consuming it
+ * consume_next returns and consumes the next char
+ * reject       is called, when the given input sequence cannot be parsed
+ * is_end       returns 1, when the given char ends the expression, 0 otherwise
  */
-ast_t consume_regex_expr_until_eof();
+ast_t consume_regex_expr();
