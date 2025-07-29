@@ -23,4 +23,4 @@ pattern_matcher.o: pattern_matcher.c
 pattern.o: pattern.c
 
 clean:
-	rm *.o $(NAME)
+	rm *.o pattern.c pattern_matcher $(NAME)
