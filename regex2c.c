@@ -3,22 +3,6 @@
  * which accepts any string which matches the regex string. The regex is truly
  * regular, so no backreferences, and also no capture groups.
  *
- * The following special chars must be escaped in the regex:
- * ()[]+*?\.|^
- *
- * The following chars do not need to be escaped
- * 0-9a-zA-Z!"#$%&',/:;<=>@_`{}~
- *
- * The following escape codes exist:
- * \0 for null character
- * \n for newline character
- * \r for carrier return
- * \t for tab
- * \s for space
- * \x__ for specifying the char hex code
- *
- * All other characters are rejected!
- *
  * The generated c code looks something like this:
  *
  * void parse() {
@@ -86,6 +70,8 @@ int reject(char *err, ...) {
   va_end(args);
   errx(EXIT_FAILURE, "Rejected at char %d: %s", char_pos, errf);
 }
+
+ast_t *get_definition(char *name) { return NULL; }
 
 extern bool_t is_end(int c) {
   switch (c) {

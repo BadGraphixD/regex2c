@@ -64,20 +64,46 @@ void print_ast_indented(ast_t *ast, int indent) {
   case WILDCARD:
     printf("WILDCARD\n");
     break;
+  case REFERENCE:
+    printf("REFERENCE\n");
+    if (ast->reference == NULL) {
+      print_indent(indent + 1);
+      printf("NULL\n");
+    } else {
+      print_ast_indented(ast->reference, indent + 1);
+    }
+    break;
   }
 }
 
 void print_ast(ast_t *ast) { print_ast_indented(ast, 0); }
 
-void delete_ast(ast_t ast) {
-  if (ast.type == CLASS || ast.type == INV_CLASS) {
-    free(ast.terminals);
-  }
+void delete_ast_children(ast_t ast) {
   ast_child_list_t *children = ast.children;
   while (children != NULL) {
     ast_child_list_t *next = children->next;
     delete_ast(children->child);
     free(children);
     children = next;
+  }
+}
+
+void delete_ast(ast_t ast) {
+  switch (ast.type) {
+  case CLASS:
+  case INV_CLASS:
+    free(ast.terminals);
+    break;
+  case OR_EXPR:
+  case AND_EXPR:
+  case STAR_MODIFIER:
+  case PLUS_MODIFIER:
+  case OPT_MODIFIER:
+    delete_ast_children(ast);
+    break;
+  case CHAR:
+  case WILDCARD:
+  case REFERENCE:
+    break;
   }
 }

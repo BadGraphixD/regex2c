@@ -10,14 +10,16 @@ typedef enum ast_type {
   PLUS_MODIFIER, // a+
   OPT_MODIFIER,  // a?
   WILDCARD,      // .
+  REFERENCE,     // {DIGIT}
 } ast_type_t;
 
 typedef struct ast {
   ast_type_t type;
-  struct ast_child_list *children;
   union {
+    struct ast_child_list *children;
     unsigned char *terminals;
     unsigned char terminal;
+    struct ast *reference;
   };
 } ast_t;
 

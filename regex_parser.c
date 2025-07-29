@@ -8,10 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_REG_DEF_REF_LEN 1024
+
 extern int peek_next();
 extern int consume_next();
 extern int reject(char *err, ...);
 extern bool_t is_end(int c);
+extern ast_t *get_definition(char *name);
 
 int consume_hex_char() {
   int c = consume_next();
@@ -133,6 +136,42 @@ void consume_char_or_range(unsigned char *terminals) {
   }
 }
 
+ast_t consume_reference() {
+  consume_next(); // consume '{'
+  ast_t ast = {.type = REFERENCE, .reference = NULL};
+  char name[MAX_REG_DEF_REF_LEN];
+  int len = 0;
+  while (1) {
+    switch (peek_next()) {
+    case 'a' ... 'z':
+    case 'A' ... 'Z':
+    case '0' ... '9':
+    case '_':
+      if (len >= MAX_REG_DEF_REF_LEN) {
+        reject(
+            "regular definition reference: name cannot be longer than %d chars",
+            MAX_REG_DEF_REF_LEN);
+      }
+      name[len++] = consume_next();
+      break;
+    case '}':
+      consume_next();
+      name[len] = '\0';
+      ast_t *ref = get_definition(name);
+      if (ref == NULL) {
+        reject("regular definition reference: regular definition with name "
+               "does not exist: '%s'",
+               name);
+      }
+      ast.reference = ref;
+      return ast;
+    default:
+      reject("regular definition reference: unexpected char: '%s'",
+             print_char(peek_next()));
+    }
+  }
+}
+
 ast_t consume_class() {
   consume_next(); // consume '['
   ast_t ast = {.type = CLASS, .terminals = calloc(256, sizeof(unsigned char))};
@@ -178,6 +217,8 @@ ast_t consume_parentheses() {
 
 ast_t consume_single() {
   switch (peek_next()) {
+  case '{':
+    return consume_reference();
   case '[':
     return consume_class();
   case '(':
@@ -230,6 +271,7 @@ ast_t consume_and_expr() {
     c++;
     switch (peek_next()) {
     case ']':
+    case '}':
     case '-':
     case '^':
     case '*':

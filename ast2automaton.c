@@ -1,4 +1,5 @@
 #include "ast2automaton.h"
+#include "ast.h"
 
 #include <stdlib.h>
 
@@ -32,6 +33,8 @@ int get_automaton_nodes_from_ast(ast_t *ast) {
   case WILDCARD:
     // These convert to exactly 2 nodes, and a bunch of connections between them
     return 2;
+  case REFERENCE:
+    return get_automaton_nodes_from_ast(ast->reference);
   }
   return 0;
 }
@@ -148,6 +151,9 @@ void convert_ast_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
     return;
   case WILDCARD:
     convert_ast_wildcard_to_automaton_nodes(automaton, ast, start, end);
+    return;
+  case REFERENCE:
+    convert_ast_to_automaton_nodes(automaton, ast->reference, start, end);
     return;
   }
 }
