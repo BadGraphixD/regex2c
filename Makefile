@@ -1,11 +1,10 @@
-NAME = regex2c
 CC = gcc
 CFLAGS = -Wall --debug
 
-.PHONY: all debug clean
-all: $(NAME)
+.PHONY: all test clean
+all: regex2c
 
-$(NAME): regex2c.o ast.o automaton.o common.o
+regex2c: regex2c.o regex_parser.o ast2automaton.o automaton2c.o ast.o automaton.o common.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 pattern_matcher: pattern_matcher.o pattern.o
@@ -14,7 +13,12 @@ pattern_matcher: pattern_matcher.o pattern.o
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(NAME).o: $(NAME).c ast.h automaton.h common.h
+regex2c.o: regex2c.c regex_parser.h ast2automaton.h automaton2c.h
+
+regex_parser.o: regex_parser.c regex_parser.h ast.h common.h
+ast2automaton.o: ast2automaton.c ast2automaton.h ast.h automaton.h
+automaton2c.o: automaton2c.c automaton2c.h automaton.h
+
 ast.o: ast.c ast.h common.h
 automaton.o: automaton.c automaton.h common.h
 common.o: common.c common.h
@@ -22,5 +26,10 @@ common.o: common.c common.h
 pattern_matcher.o: pattern_matcher.c
 pattern.o: pattern.c
 
+test: regex2c
+	cd test && make
+	echo "test/pattern_matcher has been generated"
+
 clean:
-	rm *.o pattern.c pattern_matcher $(NAME)
+	rm -f *.o regex2c
+	cd test && make clean
