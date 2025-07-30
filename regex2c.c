@@ -116,7 +116,8 @@ int main() {
   }
 
   if (PRINT_DEBUG == 0) {
-    print_automaton_to_c_code(m_automaton);
+    print_automaton_to_c_code(m_automaton, "parse", "consume_next", "accept",
+                              "reject");
   }
 
   delete_automaton(m_automaton);

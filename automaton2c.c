@@ -2,11 +2,13 @@
 
 #include <stdio.h>
 
-void print_automaton_to_c_code(automaton_t automaton) {
-  printf("extern void accept();\n");
-  printf("extern void reject();\n");
-  printf("extern int consume_next();\n");
-  printf("void parse() {\n"); // YES
+void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
+                               char *next_name, char *acc_name,
+                               char *rej_name) {
+  printf("extern int %s();\n", next_name);
+  printf("extern void %s();\n", acc_name);
+  printf("extern void %s();\n", rej_name);
+  printf("void %s() {\n", parser_name); // YES
   print_indent(2);
   printf("int state = %d;\n", automaton.start_index);
   print_indent(2);
@@ -21,7 +23,7 @@ void print_automaton_to_c_code(automaton_t automaton) {
     print_indent(4);
     printf("case %d:\n", state);
     print_indent(6);
-    printf("switch (consume_next()) {\n"); // YES
+    printf("switch (%s()) {\n", next_name); // YES
 
     for (int t = 0; t < 256; t++) {
       int range_start = t;
@@ -51,7 +53,7 @@ void print_automaton_to_c_code(automaton_t automaton) {
       print_indent(8);
       printf("case -1:\n");
       print_indent(10);
-      printf("accept();\n");
+      printf("%s();\n", acc_name);
       print_indent(10);
       printf("continue;\n");
     }
@@ -60,7 +62,7 @@ void print_automaton_to_c_code(automaton_t automaton) {
     print_indent(8);
     printf("default:\n");
     print_indent(10);
-    printf("reject();\n");
+    printf("%s();\n", rej_name);
     print_indent(10);
     printf("continue;\n");
 
