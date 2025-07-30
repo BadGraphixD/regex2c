@@ -15,4 +15,6 @@ void reject() {
 
 int consume_next() { return getc(stdin); }
 
+void checkpoint() {}
+
 int main() { parse(); }
