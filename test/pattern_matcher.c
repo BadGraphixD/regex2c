@@ -3,9 +3,24 @@
 
 extern void parse();
 
-void accept() {
-  printf("\nAccept!\n");
-  exit(EXIT_SUCCESS);
+int next_char = EOF;
+
+int peek_next() { return next_char; }
+
+int consume_next() {
+  int c = peek_next();
+  next_char = getc(stdin);
+  return c;
+}
+
+int accept(int tag) {
+  if (peek_next() == EOF) {
+    // Only accept, if the whole string has been parsed
+    printf("\nAccept!\n");
+    exit(EXIT_SUCCESS);
+  }
+  printf("\nCheckpoint!\n");
+  return 0;
 }
 
 void reject() {
@@ -13,8 +28,7 @@ void reject() {
   exit(EXIT_FAILURE);
 }
 
-int consume_next() { return getc(stdin); }
-
-void checkpoint() {}
-
-int main() { parse(); }
+int main() {
+  consume_next();
+  parse();
+}

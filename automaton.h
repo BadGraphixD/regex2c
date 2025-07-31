@@ -20,7 +20,7 @@ typedef struct edge {
 } edge_t;
 
 typedef struct node {
-  bool_t is_end;
+  int end_tag;
 } node_t;
 
 typedef struct automaton {

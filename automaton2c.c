@@ -1,14 +1,14 @@
 #include "automaton2c.h"
+#include "common.h"
 
 #include <stdio.h>
 
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
-                               char *next_name, char *acc_name, char *rej_name,
-                               char *checkpoint_name) {
+                               char *next_name, char *acc_name,
+                               char *rej_name) {
   printf("extern int %s();\n", next_name);
-  printf("extern void %s();\n", acc_name);
+  printf("extern int %s(int tag);\n", acc_name);
   printf("extern void %s();\n", rej_name);
-  printf("extern void %s();\n", checkpoint_name);
   printf("void %s() {\n", parser_name);
   print_indent(2);
   printf("int state = %d;\n", automaton.start_index);
@@ -23,10 +23,11 @@ void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
   for (int state = 0; state < automaton.max_node_count; state++) {
     print_indent(4);
     printf("case %d:\n", state);
-    if (automaton.nodes[state].is_end) {
-      // If the parsing could stop here, add checkpoint
+    int end_tag = automaton.nodes[state].end_tag;
+    if (end_tag != -1) {
+      // If the parsing could stop here, call accept with end tag
       print_indent(6);
-      printf("%s();\n", checkpoint_name);
+      printf("if (%s(%d)) { return; }\n", acc_name, end_tag);
     }
     print_indent(6);
     printf("switch (%s()) {\n", next_name);
@@ -52,16 +53,6 @@ void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
         print_indent(10);
         printf("continue;\n");
       }
-    }
-
-    // When this state is an end state, EOF is accepted
-    if (automaton.nodes[state].is_end) {
-      print_indent(8);
-      printf("case -1:\n");
-      print_indent(10);
-      printf("%s();\n", acc_name);
-      print_indent(10);
-      printf("return;\n");
     }
 
     // Reject if there is no transition for that terminal-state combo

@@ -16,8 +16,12 @@ void print_automaton(automaton_t *automaton) {
          automaton->max_node_count, automaton->next_node_index);
 
   for (int node0 = 0; node0 < automaton->max_node_count; node0++) {
-    printf("%c%c #%d", automaton->start_index == node0 ? '>' : ' ',
-           automaton->nodes[node0].is_end ? '*' : ' ', node0);
+    if (automaton->nodes[node0].end_tag == -1) {
+      printf("%c     #%d", automaton->start_index == node0 ? '>' : ' ', node0);
+    } else {
+      printf("%c*%3d #%d", automaton->start_index == node0 ? '>' : ' ',
+             automaton->nodes[node0].end_tag, node0);
+    }
 
     for (int node1 = 0; node1 < automaton->max_node_count; node1++) {
       int edge = edge_idx(automaton, node0, node1);
@@ -51,10 +55,11 @@ void print_automaton(automaton_t *automaton) {
 automaton_t create_automaton(int node_count) {
   automaton_t result = {.adjacency_matrix =
                             calloc(node_count * node_count, sizeof(edge_t)),
-                        .nodes = calloc(node_count, sizeof(node_t)),
+                        .nodes = malloc(node_count * sizeof(node_t)),
                         .max_node_count = node_count,
                         .next_node_index = 0,
                         .start_index = 0};
+  memset(result.nodes, 0xff, node_count * sizeof(node_t));
   return result;
 }
 
@@ -84,7 +89,7 @@ typedef struct dfa_state {
   bool_t *nodes;
   int index;
   dfa_edge_list_t *outgoing;
-  bool_t is_end;
+  int end_tag;
 } dfa_state_t;
 
 typedef struct dfa_state_list {
@@ -97,7 +102,7 @@ dfa_state_t create_dfa_state(automaton_t *automaton, int index) {
   state.nodes = calloc(automaton->max_node_count, sizeof(bool_t));
   state.index = index;
   state.outgoing = NULL;
-  state.is_end = 0;
+  state.end_tag = -1;
   return state;
 }
 
@@ -128,6 +133,13 @@ bool_t get_dfa_state_node(dfa_state_t *state, int node) {
   return state->nodes[node];
 }
 
+int choose_end_tag(int old, int new) {
+  if (new != -1 && (old == -1 || old > new)) {
+    return new;
+  }
+  return old;
+}
+
 /**
  * Returns all nodes, which can be reached from any of the given {@code nodes}
  * via a transition of {@code terminal}.
@@ -141,9 +153,8 @@ dfa_state_t move(automaton_t *automaton, dfa_state_t *state, int terminal,
         int edge = edge_idx(automaton, node0, node1);
         if (automaton->adjacency_matrix[edge].transitions[terminal]) {
           set_dfa_state_node(&move, node1);
-          if (automaton->nodes[node1].is_end) {
-            move.is_end = 1;
-          }
+          move.end_tag =
+              choose_end_tag(move.end_tag, automaton->nodes[node1].end_tag);
         }
       }
     }
@@ -167,9 +178,8 @@ dfa_state_t make_epsclosure(automaton_t *automaton, dfa_state_t closure) {
           if (!get_dfa_state_node(&closure, node1) &&
               automaton->adjacency_matrix[edge].transitions[EPSILON_EDGE]) {
             set_dfa_state_node(&closure, node1);
-            if (automaton->nodes[node1].is_end) {
-              closure.is_end = 1;
-            }
+            closure.end_tag = choose_end_tag(closure.end_tag,
+                                             automaton->nodes[node1].end_tag);
             closure_changed = 1;
           }
         }
@@ -269,7 +279,7 @@ automaton_t dfa_state_list_to_automaton(dfa_state_list_t *states) {
       }
       edge_list = edge_list->next;
     }
-    automaton.nodes[list->state.index].is_end = list->state.is_end;
+    automaton.nodes[list->state.index].end_tag = list->state.end_tag;
     list = list->next;
   }
   delete_dfa_state_list(states);
@@ -376,8 +386,9 @@ automaton_t create_automaton_from_partition(automaton_t *automaton,
         }
       }
     }
-    if (automaton->nodes[i].is_end) {
-      result.nodes[partition[i]].is_end = 1;
+    int end_tag = automaton->nodes[i].end_tag;
+    if (end_tag != -1) {
+      result.nodes[partition[i]].end_tag = end_tag;
     }
   }
   return result;
@@ -393,9 +404,9 @@ automaton_t minimize(automaton_t *automaton) {
   memset(partition1, 0xff, partition_size);
   bool_t *stm = create_state_transition_matrix(automaton);
 
-  // initial node partition (end state vs normal state)
+  // initial node partition (end states vs normal state)
   for (int i = 0; i < N; i++) {
-    partition0[i] = automaton->nodes[i].is_end ? 0 : 1;
+    partition0[i] = automaton->nodes[i].end_tag;
   }
 
   if (PRINT_DEBUG >= 2) {

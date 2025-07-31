@@ -1,5 +1,6 @@
 #include "ast2automaton.h"
 #include "ast.h"
+#include "automaton.h"
 
 #include <stdlib.h>
 
@@ -37,6 +38,15 @@ int get_automaton_nodes_from_ast(ast_t *ast) {
     return get_automaton_nodes_from_ast(ast->reference);
   }
   return 0;
+}
+
+int get_automaton_nodes_from_ast_list(ast_list_t *ast_list) {
+  int count = 0;
+  while (ast_list != NULL) {
+    count += get_automaton_nodes_from_ast(ast_list->ast);
+    ast_list = ast_list->next;
+  }
+  return count;
 }
 
 void convert_ast_to_automaton_nodes(automaton_t *automaton, ast_t *ast,
@@ -163,6 +173,21 @@ automaton_t convert_ast_to_automaton(ast_t *ast) {
   int start, end;
   convert_ast_to_automaton_nodes(&automaton, ast, &start, &end);
   automaton.start_index = start;
-  automaton.nodes[end].is_end = 1;
+  automaton.nodes[end].end_tag = 0;
+  return automaton;
+}
+
+automaton_t convert_ast_list_to_automaton(ast_list_t *ast_list) {
+  automaton_t automaton =
+      create_automaton(get_automaton_nodes_from_ast_list(ast_list) + 1);
+  automaton.start_index = create_node(&automaton);
+  int tag = 0;
+  while (ast_list != NULL) {
+    int start, end;
+    convert_ast_to_automaton_nodes(&automaton, ast_list->ast, &start, &end);
+    automaton.nodes[end].end_tag = tag++;
+    connect_nodes(&automaton, automaton.start_index, start, 0, 1);
+    ast_list = ast_list->next;
+  }
   return automaton;
 }
