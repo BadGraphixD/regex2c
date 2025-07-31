@@ -1,11 +1,15 @@
 CC = gcc
+LD = ld
 CFLAGS = -Wall --debug
 
-.PHONY: all test clean
+.PHONY: all lib test clean
 all: regex2c
 
 regex2c: regex2c.o regex_parser.o ast2automaton.o automaton2c.o ast.o automaton.o common.o
 	$(CC) $(CFLAGS) $^ -o $@
+
+lib: regex_parser.o ast2automaton.o automaton2c.o ast.o automaton.o common.o
+	$(LD) -r $^ -o lib.o
 
 pattern_matcher: pattern_matcher.o pattern.o
 	$(CC) $(CFLAGS) $^ -o $@
