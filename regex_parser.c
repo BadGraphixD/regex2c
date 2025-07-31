@@ -37,6 +37,8 @@ int consume_char_() {
     case ']':
     case '(':
     case ')':
+    case '{':
+    case '}':
     case '.':
     case '-':
     case '^':
@@ -78,6 +80,8 @@ int consume_char_() {
   case ']':
   case '(':
   case ')':
+  case '{':
+  case '}':
   case '.':
   case '-':
   case '^':
@@ -176,6 +180,8 @@ ast_t consume_class() {
     case '[':
     case '(':
     case ')':
+    case '{':
+    case '}':
     case '.':
     case '-':
     case '^':
@@ -218,6 +224,7 @@ ast_t consume_single() {
     return consume_wildcard();
   case ']':
   case ')':
+  case '}':
   case '-':
   case '^':
   case '|':
