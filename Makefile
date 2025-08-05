@@ -1,6 +1,6 @@
 CC = gcc
 LD = ld
-CFLAGS = -Wall --debug
+CFLAGS = -Wall
 
 .PHONY: all lib test clean
 all: regex2c

@@ -1,14 +1,38 @@
 #include "automaton2c.h"
 #include "common.h"
 
+#include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+void print_decl_modifier(int flags) {
+  bool_t static_decl = flags & 1;
+  bool_t extern_decl = flags & 2;
+  if (static_decl && extern_decl) {
+    errx(EXIT_FAILURE,
+         "Invalid flags: cannot declare c function as both static and extern");
+  }
+  if (static_decl) {
+    printf("static ");
+  }
+  if (extern_decl) {
+    printf("extern ");
+  }
+}
 
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
-                               char *next_name, char *acc_name,
-                               char *rej_name) {
-  printf("extern int %s();\n", next_name);
-  printf("extern int %s(int tag);\n", acc_name);
-  printf("extern void %s();\n", rej_name);
+                               char *next_name, char *acc_name, char *rej_name,
+                               int flags) {
+  print_decl_modifier(flags << 0);
+  printf("int %s();\n", next_name);
+
+  print_decl_modifier(flags << 2);
+  printf("int %s(int tag);\n", acc_name);
+
+  print_decl_modifier(flags << 4);
+  printf("void %s();\n", rej_name);
+
+  print_decl_modifier(flags << 6);
   printf("void %s() {\n", parser_name);
   print_indent(2);
   printf("int state = %d;\n", automaton.start_index);
@@ -42,25 +66,25 @@ void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
         }
 
         // Add transitions for all defined edges
-        print_indent(8);
+        print_indent(6);
         if (range_start == t) {
           printf("case %d:\n", t);
         } else {
           printf("case %d ... %d:\n", range_start, t);
         }
-        print_indent(10);
+        print_indent(8);
         printf("state = %d;\n", target);
-        print_indent(10);
+        print_indent(8);
         printf("continue;\n");
       }
     }
 
     // Reject if there is no transition for that terminal-state combo
-    print_indent(8);
+    print_indent(6);
     printf("default:\n");
-    print_indent(10);
+    print_indent(8);
     printf("%s();\n", rej_name);
-    print_indent(10);
+    print_indent(8);
     printf("return;\n");
 
     print_indent(6);

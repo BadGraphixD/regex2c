@@ -3,6 +3,17 @@
 #include "automaton.h"
 #include "common.h"
 
+#define REGEX2C_NEXT_DECL_STATIC 1
+#define REGEX2C_NEXT_DECL_EXTERN 2
+#define REGEX2C_ACCEPT_DECL_STATIC 4
+#define REGEX2C_ACCEPT_DECL_EXTERN 8
+#define REGEX2C_REJECT_DECL_STATIC 16
+#define REGEX2C_REJECT_DECL_EXTERN 32
+#define REGEX2C_PARSER_DECL_STATIC 64
+
+#define REGEX2C_ALL_DECL_STATIC 85
+#define REGEX2C_ALL_DECL_EXTERN 42
+
 /*
  * Generates c code from the given {@code automaton}.
  *
@@ -17,8 +28,11 @@
  * immediately. The names of the functions are defined by the parameters {@code
  * next_name}, {@code acc_name}, and {@code rej_name}.
  *
+ * {@code flags} is used to further configure the generated c code.
+ *
  * The implementations of these functions must be provided somewhere else (e.g.
  * in the code that the generated code will be linked with).
  */
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
-                               char *next_name, char *acc_name, char *rej_name);
+                               char *next_name, char *acc_name, char *rej_name,
+                               int flags);
