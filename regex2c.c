@@ -117,7 +117,7 @@ int main() {
 
   if (PRINT_DEBUG == 0) {
     print_automaton_to_c_code(m_automaton, "parse", "consume_next", "accept",
-                              "reject", REGEX2C_ALL_DECL_EXTERN);
+                              "reject", 0);
   }
 
   delete_automaton(m_automaton);

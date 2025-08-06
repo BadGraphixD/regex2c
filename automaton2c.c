@@ -3,37 +3,14 @@
 
 #include <err.h>
 #include <stdio.h>
-#include <stdlib.h>
-
-void print_decl_modifier(int flags) {
-  bool_t static_decl = flags & 1;
-  bool_t extern_decl = flags & 2;
-  if (static_decl && extern_decl) {
-    errx(EXIT_FAILURE,
-         "Invalid flags: cannot declare c function as both static and extern");
-  }
-  if (static_decl) {
-    printf("static ");
-  }
-  if (extern_decl) {
-    printf("extern ");
-  }
-}
 
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
                                char *next_name, char *acc_name, char *rej_name,
                                int flags) {
-  print_decl_modifier(flags >> 0);
-  printf("int %s();\n", next_name);
-
-  print_decl_modifier(flags >> 2);
-  printf("int %s(int tag);\n", acc_name);
-
-  print_decl_modifier(flags >> 4);
-  printf("void %s();\n", rej_name);
-
-  print_decl_modifier(flags >> 6);
-  printf("void %s() {\n", parser_name);
+  printf("%sint %s();\n", flags & 1 ? "static " : "", next_name);
+  printf("%sint %s(int tag);\n", flags & 2 ? "static " : "", acc_name);
+  printf("%svoid %s();\n", flags & 4 ? "static " : "", rej_name);
+  printf("%svoid %s() {\n", flags & 8 ? "static " : "", parser_name);
   print_indent(2);
   printf("int state = %d;\n", automaton.start_index);
   print_indent(2);
