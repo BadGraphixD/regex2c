@@ -23,16 +23,16 @@ void print_decl_modifier(int flags) {
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
                                char *next_name, char *acc_name, char *rej_name,
                                int flags) {
-  print_decl_modifier(flags << 0);
+  print_decl_modifier(flags >> 0);
   printf("int %s();\n", next_name);
 
-  print_decl_modifier(flags << 2);
+  print_decl_modifier(flags >> 2);
   printf("int %s(int tag);\n", acc_name);
 
-  print_decl_modifier(flags << 4);
+  print_decl_modifier(flags >> 4);
   printf("void %s();\n", rej_name);
 
-  print_decl_modifier(flags << 6);
+  print_decl_modifier(flags >> 6);
   printf("void %s() {\n", parser_name);
   print_indent(2);
   printf("int state = %d;\n", automaton.start_index);
