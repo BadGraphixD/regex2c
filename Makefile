@@ -1,9 +1,21 @@
 CC = gcc
+CFLAGS = -Wall -Werror
 LD = ld
-CFLAGS = -Wall
 
-.PHONY: all lib test clean
+CDFLAGS = -pg
+CRFLAGS = -O2
+
+.PHONY: all debug release lib lib_debug lib_release test clean
 all: regex2c
+
+debug: CFLAGS += $(CDFLAGS)
+debug: regex2c
+lib_debug: CFLAGS += $(CDFLAGS)
+lib_debug: lib
+release: CFLAGS += $(CRFLAGS)
+release: regex2c
+lib_release: CFLAGS += $(CRFLAGS)
+lib_release: lib
 
 regex2c: regex2c.o regex_parser.o ast2automaton.o automaton2c.o ast.o automaton.o common.o
 	$(CC) $(CFLAGS) $^ -o $@
@@ -31,9 +43,9 @@ pattern_matcher.o: pattern_matcher.c
 pattern.o: pattern.c
 
 test: regex2c
-	cd test && make
-	echo "test/pattern_matcher has been generated"
+	@cd test && make
+	@echo "test/pattern_matcher has been generated"
 
 clean:
 	rm -f *.o regex2c
-	cd test && make clean
+	@cd test && make clean

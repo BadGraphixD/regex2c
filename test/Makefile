@@ -1,8 +1,16 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -Werror
 
-.PHONY: all
+CDFLAGS = -pg
+CRFLAGS = -O2
+
+.PHONY: all debug release
 all: pattern_matcher
+
+debug: CFLAGS += $(CDFLAGS)
+debug: pattern_matcher
+release: CFLAGS += $(CRFLAGS)
+release: pattern_matcher
 
 pattern_matcher: pattern_matcher.o pattern.o
 	$(CC) $(CFLAGS) $^ -o $@
