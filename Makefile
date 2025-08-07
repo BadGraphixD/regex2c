@@ -3,7 +3,7 @@ CFLAGS = -Wall -Werror
 LD = ld
 
 CDFLAGS = -pg
-CRFLAGS = -O2
+CRFLAGS = -O3
 
 .PHONY: all debug release lib lib_debug lib_release test clean
 all: regex2c
@@ -47,5 +47,5 @@ test: regex2c
 	@echo "test/pattern_matcher has been generated"
 
 clean:
-	rm -f *.o regex2c
+	rm -f *.o *.out regex2c
 	@cd test && make clean

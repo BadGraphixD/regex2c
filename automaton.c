@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-int edge_idx(automaton_t *automaton, int node0, int node1) {
+__attribute__((always_inline)) inline int edge_idx(automaton_t *automaton,
+                                                   int node0, int node1) {
   return node1 * automaton->max_node_count + node0;
 }
 
@@ -87,8 +88,8 @@ typedef struct dfa_edge_list {
 
 typedef struct dfa_state {
   bool_t *nodes;
-  int index;
   dfa_edge_list_t *outgoing;
+  int index;
   int end_tag;
 } dfa_state_t;
 
@@ -125,19 +126,22 @@ void delete_dfa_state_list(dfa_state_list_t *list) {
   }
 }
 
-void set_dfa_state_node(dfa_state_t *state, int node) {
+__attribute__((always_inline)) inline void
+set_dfa_state_node(dfa_state_t *state, int node) {
   state->nodes[node] = 1;
 }
 
-bool_t get_dfa_state_node(dfa_state_t *state, int node) {
+__attribute__((always_inline)) inline bool_t
+get_dfa_state_node(dfa_state_t *state, int node) {
   return state->nodes[node];
 }
 
-int choose_end_tag(int old, int new) {
-  if (new != -1 && (old == -1 || old > new)) {
-    return new;
-  }
-  return old;
+__attribute__((always_inline)) inline int choose_end_tag(int old, int new) {
+  return new != -1 && (old == -1 || old > new) ? new : old;
+  /* if (new != -1 && (old == -1 || old > new)) { */
+  /*   return new; */
+  /* } */
+  /* return old; */
 }
 
 /**

@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Werror
 
 CDFLAGS = -pg
-CRFLAGS = -O2
+CRFLAGS = -O3
 
 .PHONY: all debug release
 all: pattern_matcher
@@ -25,4 +25,4 @@ pattern.c: pattern.regex
 	../regex2c <pattern.regex >pattern.c
 
 clean:
-	rm -f *.o pattern.c pattern_matcher
+	rm -f *.o *.out pattern.c pattern_matcher
