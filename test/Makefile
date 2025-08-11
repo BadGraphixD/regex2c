@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Werror
 
-CDFLAGS = -pg
+CDFLAGS = -pg -g
 CRFLAGS = -O3
 
 .PHONY: all debug release

@@ -11,72 +11,70 @@ void add_child(ast_t *ast, ast_t child) {
   ast->children = list;
 }
 
-void print_ast_indented(ast_t *ast, int indent);
-
-void print_ast_children(ast_t *ast, int indent) {
+void print_ast_children(ast_t *ast, int indent, FILE *fout) {
   ast_child_list_t *children = ast->children;
   while (children) {
-    print_ast_indented(&children->child, indent + 1);
+    print_ast_indented(&children->child, indent + 1, fout);
     children = children->next;
   }
 }
 
-void print_ast_indented(ast_t *ast, int indent) {
-  print_indent(indent);
+void print_ast_indented(ast_t *ast, int indent, FILE *fout) {
+  fprint_indent(indent, fout);
   switch (ast->type) {
   case OR_EXPR:
-    printf("OR\n");
-    print_ast_children(ast, indent);
+    fprintf(fout, "OR\n");
+    print_ast_children(ast, indent, fout);
     break;
   case AND_EXPR:
-    printf("AND\n");
-    print_ast_children(ast, indent);
+    fprintf(fout, "AND\n");
+    print_ast_children(ast, indent, fout);
     break;
   case CHAR:
-    printf("CHAR\n");
-    print_indent(indent + 1);
-    printf("%s\n", print_char(ast->terminal));
+    fprintf(fout, "CHAR\n");
+    fprint_indent(indent + 1, fout);
+    fprintf(fout, "%s\n", print_char(ast->terminal));
     break;
   case INV_CLASS:
-    printf("INV_");
+    fprintf(fout, "INV_");
   case CLASS:
-    printf("CLASS\n");
-    print_indent(indent + 1);
+    fprintf(fout, "CLASS\n");
+    fprint_indent(indent + 1, fout);
     for (int i = 0; i < 256; i++) {
       if (ast->terminals[i]) {
-        printf("%s ", print_char(i));
+        fprintf(fout, "%s ", print_char(i));
       }
     }
-    printf("\n");
+    fprintf(fout, "\n");
     break;
   case STAR_MODIFIER:
-    printf("STAR\n");
-    print_ast_children(ast, indent);
+    fprintf(fout, "STAR\n");
+    print_ast_children(ast, indent, fout);
     break;
   case PLUS_MODIFIER:
-    printf("PLUS\n");
-    print_ast_children(ast, indent);
+    fprintf(fout, "PLUS\n");
+    print_ast_children(ast, indent, fout);
     break;
   case OPT_MODIFIER:
-    printf("OPT\n");
-    print_ast_children(ast, indent);
+    fprintf(fout, "OPT\n");
+    print_ast_children(ast, indent, fout);
     break;
   case WILDCARD:
-    printf("WILDCARD\n");
+    fprintf(fout, "WILDCARD\n");
     break;
   case REFERENCE:
-    printf("REFERENCE\n");
+    fprintf(fout, "REFERENCE\n");
     if (ast->reference == NULL) {
-      print_indent(indent + 1);
-      printf("NULL\n");
+      fprint_indent(indent + 1, fout);
+      fprintf(fout, "NULL\n");
     } else {
-      print_ast_indented(ast->reference, indent + 1);
+      print_ast_indented(ast->reference, indent + 1, fout);
     }
     break;
   }
 }
 
-void print_ast(ast_t *ast) { print_ast_indented(ast, 0); }
+void print_ast(ast_t *ast, FILE *fout) { print_ast_indented(ast, 0, fout); }
 
 void delete_ast_children(ast_t ast) {
   ast_child_list_t *children = ast.children;

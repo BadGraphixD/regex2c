@@ -41,12 +41,15 @@
 
 #include "ast2automaton.h"
 #include "automaton2c.h"
+#include "common.h"
 #include "regex_parser.h"
 
 #include <err.h>
+#include <getopt.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int next_char = EOF;
 int char_pos = 0;
@@ -60,7 +63,7 @@ int consume_next() {
   return c;
 }
 
-int reject(char *err, ...) {
+_Noreturn int reject(char *err, ...) {
   va_list args;
   va_start(args, err);
   char *errf = NULL;
@@ -87,38 +90,150 @@ extern bool_t is_end(int c) {
   }
 }
 
-int main() {
+const struct option OPTIONS_LONG[] = {{"help", no_argument, NULL, 'h'},
+                                      {"version", no_argument, NULL, 'v'},
+                                      {"debug", no_argument, NULL, 'd'},
+                                      {"output", required_argument, NULL, 'o'},
+                                      {NULL, 0, NULL, 0}};
+
+const char *const OPTIONS_HELP[] = {
+    ['h'] = "print this help list",
+    ['v'] = "print program version",
+    ['d'] = "output debug information",
+    ['o'] = "set output file name",
+};
+
+_Noreturn static void version() {
+  printf("regex2c 1.0\n");
+  exit(EXIT_SUCCESS);
+}
+
+const char *prog_name;
+bool_t opts_given[ARRAY_SIZE(OPTIONS_LONG) - 1] = {0};
+FILE *out_file = NULL;
+bool_t output_debug_info = 0;
+
+static void parse_options(int *argc, char ***argv) {
+  opterr = 0;
+
+  int opt;
+  bool_t opt_help = 0;
+  bool_t opt_version = 0;
+  const char *opt_output = NULL;
+  const char *options_short = make_short_opts(OPTIONS_LONG);
+
+  for (;;) {
+    opt = getopt_long(*argc, *argv, options_short, OPTIONS_LONG, NULL);
+    if (opt == -1) {
+      break;
+    }
+    switch (opt) {
+    case 'h':
+      opt_help = 1;
+      break;
+    case 'v':
+      opt_version = 1;
+      break;
+    case 'd':
+      output_debug_info = 1;
+      break;
+    case 'o':
+      if (SKIP_WS(optarg)[0] == '\0') {
+        goto missing_arg;
+      }
+      opt_output = optarg;
+      break;
+    case ':':
+      goto missing_arg;
+    case '?':
+      goto invalid_opt;
+    }
+    opts_given[opt] = 1;
+  }
+
+  free((void *)options_short);
+  options_short = NULL;
+  *argc -= optind;
+  *argv += optind;
+
+  opt_check_exclusive('h');
+  opt_check_exclusive('v');
+
+  if (opt_help) {
+    usage(*argc > 0 ? EXIT_FAILURE : EXIT_SUCCESS);
+  }
+  if (opt_version) {
+    if (*argc > 0) {
+      usage(EXIT_FAILURE);
+    }
+    version();
+  }
+
+  if (opt_output == NULL) {
+    out_file = stdout;
+  } else {
+    out_file = fopen(opt_output, "w");
+    if (out_file == NULL) {
+      errx(EXIT_FAILURE, "Failed to open specified output file \"%s\"\n",
+           opt_output);
+    }
+  }
+
+  return;
+
+invalid_opt:
+  (void)0;
+  const char *invalid_opt = (*argv)[optind - 1];
+  if (invalid_opt != NULL && strncmp(invalid_opt, "--", 2) == 0) {
+    fprintf(stderr, "\"%s\": invalid option", invalid_opt + 2);
+  } else {
+    fprintf(stderr, "'%c': invalid option", optopt);
+  }
+  fputs("; usa --help or -h for help\n", stderr);
+  exit(EXIT_FAILURE);
+missing_arg:
+  errx(EXIT_FAILURE, "\"%s\" requires an argument\n",
+       opt_format(opt == ':' ? optopt : opt));
+}
+
+int main(int argc, char **argv) {
+  prog_name = *argv;
+  parse_options(&argc, &argv);
+
   consume_next();
   ast_t ast = consume_regex_expr();
-  if (PRINT_DEBUG >= 1) {
-    print_ast(&ast);
+  if (output_debug_info) {
+    fprintf(out_file, "--- Abstract syntax tree:\n");
+    print_ast(&ast, out_file);
+    fprintf(out_file, "\n");
   }
 
   automaton_t automaton = convert_ast_to_automaton(&ast);
   delete_ast(ast);
-  if (PRINT_DEBUG >= 1) {
-    printf("NFA: ");
-    print_automaton(&automaton);
+  if (output_debug_info) {
+    fprintf(out_file, "--- NFA:\n");
+    print_automaton(&automaton, out_file);
+    fprintf(out_file, "\n");
   }
 
   automaton_t d_automaton = determinize(&automaton);
   delete_automaton(automaton);
-  if (PRINT_DEBUG >= 1) {
-    printf("DFA: ");
-    print_automaton(&d_automaton);
+  if (output_debug_info) {
+    fprintf(out_file, "--- DFA:\n");
+    print_automaton(&d_automaton, out_file);
+    fprintf(out_file, "\n");
   }
 
   automaton_t m_automaton = minimize(&d_automaton);
   delete_automaton(d_automaton);
-  if (PRINT_DEBUG >= 1) {
-    printf("Minimal DFA: ");
-    print_automaton(&m_automaton);
+  if (output_debug_info) {
+    fprintf(out_file, "--- Minimal DFA:\n");
+    print_automaton(&m_automaton, out_file);
+    fprintf(out_file, "\n--- C code:\n");
   }
 
-  if (PRINT_DEBUG == 0) {
-    print_automaton_to_c_code(m_automaton, "parse", "consume_next", "accept",
-                              "reject", 0);
-  }
+  print_automaton_to_c_code(m_automaton, "parse", "consume_next", "accept",
+                            "reject", 0, out_file);
 
   delete_automaton(m_automaton);
 }

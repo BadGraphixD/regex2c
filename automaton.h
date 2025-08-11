@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <stdio.h>
+
 #include "common.h"
 
 #define EPSILON_EDGE 256
@@ -34,7 +36,7 @@ typedef struct automaton {
 /**
  * Prints the given {@code automaton}.
  */
-void print_automaton(automaton_t *automaton);
+void print_automaton(automaton_t *automaton, FILE *fout);
 
 /**
  * Creates an automaton which can hold up to {@code node_count} nodes.

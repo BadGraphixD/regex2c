@@ -12,23 +12,25 @@ __attribute__((always_inline)) inline int edge_idx(automaton_t *automaton,
   return node1 * automaton->max_node_count + node0;
 }
 
-void print_automaton(automaton_t *automaton) {
-  printf("Automaton (max nodes = %d, node count = %d)\n",
-         automaton->max_node_count, automaton->next_node_index);
+void print_automaton(automaton_t *automaton, FILE *fout) {
+  fprintf(fout, "Automaton (max nodes = %d, node count = %d)\n",
+          automaton->max_node_count, automaton->next_node_index);
+  fprintf(fout, "> start, * end, end tag, # node idx, symbol -> next node\n");
 
   for (int node0 = 0; node0 < automaton->max_node_count; node0++) {
     if (automaton->nodes[node0].end_tag == -1) {
-      printf("%c     #%d", automaton->start_index == node0 ? '>' : ' ', node0);
+      fprintf(fout, "%c     #%d", automaton->start_index == node0 ? '>' : ' ',
+              node0);
     } else {
-      printf("%c*%3d #%d", automaton->start_index == node0 ? '>' : ' ',
-             automaton->nodes[node0].end_tag, node0);
+      fprintf(fout, "%c*%3d #%d", automaton->start_index == node0 ? '>' : ' ',
+              automaton->nodes[node0].end_tag, node0);
     }
 
     for (int node1 = 0; node1 < automaton->max_node_count; node1++) {
       int edge = edge_idx(automaton, node0, node1);
 
       if (automaton->adjacency_matrix[edge].transitions[EPSILON_EDGE]) {
-        printf(" ε->%d", node1);
+        fprintf(fout, " ε->%d", node1);
       }
 
       int is_wildcard = 1;
@@ -40,16 +42,16 @@ void print_automaton(automaton_t *automaton) {
       }
 
       if (is_wildcard) {
-        printf(" any->%d", node1);
+        fprintf(fout, " any->%d", node1);
       } else {
         for (int t = 0; t < 256; t++) {
           if (automaton->adjacency_matrix[edge].transitions[t]) {
-            printf(" %s->%d", print_char(t), node1);
+            fprintf(fout, " %s->%d", print_char(t), node1);
           }
         }
       }
     }
-    printf("\n");
+    fprintf(fout, "\n");
   }
 }
 
@@ -332,11 +334,6 @@ bool_t nodes_equivalent(bool_t *stm, int node0, int node1, int *partition) {
     int dest0 = stm[node0 * 256 + t];
     int dest1 = stm[node1 * 256 + t];
     if (partition[dest0] != partition[dest1]) {
-      if (PRINT_DEBUG >= 2) {
-        printf("Nodes %d and %d different because targets %d and %d are in "
-               "different partitions\n",
-               node0, node1, dest0, dest1);
-      }
       return 0;
     }
   }
@@ -413,65 +410,30 @@ automaton_t minimize(automaton_t *automaton) {
     partition0[i] = automaton->nodes[i].end_tag;
   }
 
-  if (PRINT_DEBUG >= 2) {
-    printf("Initial partition:");
-    print_partition(partition0, N);
-  }
-
   while (1) {
     int next_partition_idx = 0;
 
     int i = 0;
     while (i < N) {
-      if (PRINT_DEBUG >= 2) {
-        printf("\n\n\nNew round, starting from %d:\n", i);
-        printf("This is the old partition:");
-        print_partition(partition0, N);
-      }
       partition1[i] = next_partition_idx;
       int i_next = N;
       for (int j = i + 1; j < N; j++) {
-        if (PRINT_DEBUG >= 2) {
-          printf("Checking nodes i=%d and j=%d:   ", i, j);
-        }
         if (partition1[j] >= 0) {
-          if (PRINT_DEBUG >= 2) {
-            printf("Node j=%d already in p=%d\n", j, partition1[j]);
-          }
           // that node is already partitioned
           continue;
         }
         if (partition0[i] == partition0[j] &&
             nodes_equivalent(stm, i, j, partition0)) {
           // nodes are equivalent -> put into same partition
-          if (PRINT_DEBUG >= 2) {
-            printf("Nodes equivalent\n");
-          }
           partition1[j] = next_partition_idx;
         } else if (i_next == N) {
           // nodes are not equivalent -> create new partition and
           // start at this node
           i_next = j;
-          if (PRINT_DEBUG >= 2) {
-            printf("Nodes not equivalent, let's start at %d next round :)\n",
-                   i_next);
-          }
-        } else if (PRINT_DEBUG >= 2) {
-          printf("Nodes not equivalent\n");
         }
       }
       i = i_next;
       next_partition_idx++;
-
-      if (PRINT_DEBUG >= 2) {
-        printf("This is the new partition:");
-        print_partition(partition1, N);
-      }
-    }
-
-    if (PRINT_DEBUG >= 2) {
-      printf("This is the completed partition:");
-      print_partition(partition1, N);
     }
 
     if (partitions_equivalent(partition0, partition1, N)) {

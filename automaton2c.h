@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 #include "automaton.h"
 #include "common.h"
 
@@ -31,4 +33,4 @@
  */
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
                                char *next_name, char *acc_name, char *rej_name,
-                               int flags);
+                               int flags, FILE *fout);

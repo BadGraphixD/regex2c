@@ -1,8 +1,14 @@
 #pragma once
 
+#include <getopt.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
-#define PRINT_DEBUG 0
+#define SKIP_WS(S) ((S) += strspn((S), " \n\t\r\f\v"))
+
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof(A[0]))
+#define STRLITLEN(S) (ARRAY_SIZE(S) - 1)
 
 typedef char bool_t;
 
@@ -14,6 +20,13 @@ typedef struct string {
 string_t create_string(char *data);
 void append_char_to_str(string_t *string, char c);
 void append_str_to_str(string_t *string, char *other);
+
+const char *make_short_opts(const struct option *opts);
+_Noreturn void usage(int status);
+const char *opt_get_long(char short_opt);
+const char *opt_format(char short_opt);
+void opt_check_exclusive(unsigned char opt);
+void opt_check_mutually_exclusive(unsigned char opt, const char *opts);
 
 /**
  * Prints the given ASCII code {@code c} into a string. {@code -1} is
@@ -30,4 +43,4 @@ void append_str_to_str(string_t *string, char *other);
  * \?________
  */
 char *print_char(int c);
-void print_indent(int indent);
+void fprint_indent(int indent, FILE *fout);

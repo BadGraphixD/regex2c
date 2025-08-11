@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 typedef enum ast_type {
   OR_EXPR,       // a|b
   AND_EXPR,      // abc
@@ -29,8 +31,7 @@ typedef struct ast_child_list {
 } ast_child_list_t;
 
 void add_child(ast_t *ast, ast_t child);
-void print_ast_indented(ast_t *ast, int indent);
-void print_ast_children(ast_t *ast, int indent);
-void print_ast_indented(ast_t *ast, int indent);
-void print_ast(ast_t *ast);
+void print_ast_indented(ast_t *ast, int indent, FILE *fout);
+void print_ast_children(ast_t *ast, int indent, FILE *fout);
+void print_ast(ast_t *ast, FILE *fout);
 void delete_ast(ast_t ast);

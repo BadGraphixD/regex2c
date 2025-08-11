@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Werror
 LD = ld
 
-CDFLAGS = -pg
+CDFLAGS = -pg -g
 CRFLAGS = -O3
 
 .PHONY: all debug release lib lib_debug lib_release test clean
