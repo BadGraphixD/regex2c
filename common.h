@@ -22,7 +22,7 @@ void append_char_to_str(string_t *string, char c);
 void append_str_to_str(string_t *string, char *other);
 
 const char *make_short_opts(const struct option *opts);
-_Noreturn void usage(int status);
+void print_options(int status, FILE *fout);
 const char *opt_get_long(char short_opt);
 const char *opt_format(char short_opt);
 void opt_check_exclusive(unsigned char opt);

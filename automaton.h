@@ -1,13 +1,3 @@
-/**
- * We need to:
- *
- * 1. Convert the regex ast into the NFA (by inserting a ludicrous amount of
- * epsilon-transitions)
- * 2. Convert the NFA into the DFA
- * 3. Minimize the DFA
- * 4. Convert the DFA into c code
- */
-
 #pragma once
 
 #include <stdio.h>

@@ -1,40 +1,50 @@
 /**
- * We convert a regex input string (which is accepted via stdin) into c code,
- * which accepts any string which matches the regex string. The regex is truly
- * regular, so no backreferences, and also no capture groups.
+ * We convert a regular expression into an automata in c code, which accepts any
+ * string which matches the regular expression.
  *
  * The generated c code looks something like this:
  *
+ * int consume_next();
+ * int accept(int tag);
+ * void reject();
  * void parse() {
  *   int state = 0;
  *   while (1) {
  *     switch (state) {
  *     case 0:
  *       switch (consume_next()) {
- *         case 97:
- *           state = 1;
- *           continue;
- *         default:
- *           reject();
- *           continue;
+ *       case 97:
+ *         state = 1;
+ *         continue;
+ *       default:
+ *         reject();
+ *         return;
  *       }
- *     }
  *     case 1:
  *       switch (consume_next()) {
- *         case -1:
- *           accept();
- *           continue;
- *         default:
- *           reject();
- *           continue;
+ *       case 98:
+ *         state = 2;
+ *         continue;
+ *       default:
+ *         reject();
+ *         return;
+ *       }
+ *     case 2:
+ *       if (accept(0)) { return; }
+ *       switch (consume_next()) {
+ *       default:
+ *         reject();
+ *         return;
  *       }
  *     }
  *   }
  * }
  *
- * It depends on (but does not implement) the functions accept(), reject() and
- * consume_next(). The goal is also to generate a minimal automata (minimal c
- * code).
+ * This example was generated from the regular expression "ab".
+ *
+ * It depends on (but does not implement) the functions accept, reject and
+ * consume_next. The goal is also to generate a minimal automata (but not
+ * minimal c code).
  *
  * @author Florian Malicky
  */
@@ -69,9 +79,13 @@ static void open_next_in_file() {
     fin = NULL;
     return;
   }
-  fin = fopen(next_in_file_name, "r");
-  if (fin == NULL) {
-    errx(EXIT_FAILURE, "Cannot open file \"%s\"\n", next_in_file_name);
+  if (strcmp(next_in_file_name, "-") == 0) {
+    fin = stdin;
+  } else {
+    fin = fopen(next_in_file_name, "r");
+    if (fin == NULL) {
+      errx(EXIT_FAILURE, "Cannot open file \"%s\"\n", next_in_file_name);
+    }
   }
 }
 
@@ -147,6 +161,15 @@ const char *prog_name;
 bool_t opts_given[ARRAY_SIZE(OPTIONS_LONG) - 1] = {0};
 FILE *out_file = NULL;
 bool_t output_debug_info = 0;
+
+_Noreturn static void usage(int status) {
+  FILE *fout = status == 0 ? stdout : stderr;
+  fprintf(fout, "Usage: %s [OPTION]... [FILE]...\n", prog_name);
+  fprintf(fout, "Convert a regular expression into an automata in c-code.\n\n");
+  fprintf(fout, "With no FILE, or when FILE is -, read standard input.\n\n");
+  print_options(status, fout);
+  exit(status);
+}
 
 static void parse_options(int *argc, char ***argv) {
   opterr = 0;

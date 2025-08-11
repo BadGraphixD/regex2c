@@ -19,17 +19,27 @@
  * automaton. The name of that function is defined by {@code parser_name}.
  *
  * This function relies on three functions, which will be called to fetch the
- * next character, accept or reject the strin. Accept is called when the parsing
- * reaches an end node and the tag of the end node is supplied as the first
- * argument. If accept returns 0, the parsing will continue (until the next end
- * point is reached or reject is called). If it returns 1, the parser returns
- * immediately. The names of the functions are defined by the parameters {@code
- * next_name}, {@code acc_name}, and {@code rej_name}.
- *
- * {@code flags} is used to further configure the generated c code.
+ * next character, accept or reject the string. Accept is called when the
+ * parsing reaches an end node and the tag of the end node is supplied as the
+ * first argument. If accept returns 0, the parsing will continue (until the
+ * next end point is reached or reject is called). If it returns 1, the parser
+ * returns immediately. The names of the functions are defined by the parameters
+ * {@code next_name}, {@code acc_name}, and {@code rej_name}.
  *
  * The implementations of these functions must be provided somewhere else (e.g.
  * in the code that the generated code will be linked with).
+ *
+ * {@code flags} is used to further configure the generated c code. The
+ * following flags exist:
+ *
+ * REGEX2C_NEXT_DECL_STATIC =   1  // declare the {@code next} function static
+ * REGEX2C_ACCEPT_DECL_STATIC = 2  // declare the {@code accept} function static
+ * REGEX2C_REJECT_DECL_STATIC = 4  // declare the {@code reject} function static
+ * REGEX2C_PARSER_DECL_STATIC = 8  // declare the {@code parser} function static
+ * REGEX2C_ALL_DECL_STATIC =    15 // declare all functions static
+ *
+ * These flags are useful when the generated code is not linked, but included
+ * into other code.
  */
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
                                char *next_name, char *acc_name, char *rej_name,

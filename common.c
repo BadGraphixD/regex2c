@@ -65,7 +65,7 @@ const char *make_short_opts(const struct option *opts) {
   return short_opts;
 }
 
-_Noreturn void usage(int status) {
+void print_options(int status, FILE *fout) {
   size_t longest_opt_len = 0;
   for (const struct option *opt = OPTIONS_LONG; opt->name != NULL; opt++) {
     size_t opt_len = strlen(opt->name);
@@ -84,9 +84,6 @@ _Noreturn void usage(int status) {
     }
   }
 
-  FILE *fout = status == 0 ? stdout : stderr;
-  fprintf(fout, "usage: %s [options] ...\noptions:\n", prog_name);
-
   for (const struct option *opt = OPTIONS_LONG; opt->name != NULL; opt++) {
     fprintf(fout, "  --%s", opt->name);
     size_t opt_len = strlen(opt->name);
@@ -103,8 +100,6 @@ _Noreturn void usage(int status) {
     fprintf(fout, "%*s (-%c) %s.\n", (int)(longest_opt_len - opt_len), "",
             opt->val, OPTIONS_HELP[opt->val]);
   }
-
-  exit(status);
 }
 
 const char *opt_get_long(char short_opt) {
