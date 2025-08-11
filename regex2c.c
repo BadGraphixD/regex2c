@@ -51,14 +51,49 @@
 #include <stdlib.h>
 #include <string.h>
 
-int next_char = EOF;
-int char_pos = 0;
+static int next_char = EOF;
+static int char_pos = 0;
+
+static char **in_files = NULL;
+static int fin_idx = 0;
+static FILE *fin = NULL;
 
 int peek_next() { return next_char; }
 
+static void open_next_in_file() {
+  if (fin != NULL) {
+    fclose(fin);
+  }
+  char *next_in_file_name = in_files[fin_idx++];
+  if (next_in_file_name == NULL) {
+    fin = NULL;
+    return;
+  }
+  fin = fopen(next_in_file_name, "r");
+  if (fin == NULL) {
+    errx(EXIT_FAILURE, "Cannot open file \"%s\"\n", next_in_file_name);
+  }
+}
+
+static int get_next_input_char() {
+  if (in_files == NULL) {
+    return getc(stdin);
+  } else {
+    if (fin == NULL) {
+      return EOF;
+    }
+    int next = getc(fin);
+    if (next == EOF) {
+      open_next_in_file();
+      return get_next_input_char();
+    }
+    return next;
+  }
+}
+
 int consume_next() {
   int c = peek_next();
-  next_char = getc(stdin);
+  next_char = get_next_input_char();
   char_pos++;
   return c;
 }
@@ -76,7 +111,7 @@ _Noreturn int reject(char *err, ...) {
 
 ast_t *get_definition(char *name) { return NULL; }
 
-extern bool_t is_end(int c) {
+bool_t is_end(int c) {
   switch (c) {
   case EOF:
   case '\n':
@@ -179,6 +214,15 @@ static void parse_options(int *argc, char ***argv) {
     }
   }
 
+  if (*argc > 0) {
+    in_files = malloc(sizeof(char *) * (*argc + 1));
+    for (int i = 0; i < *argc; i++) {
+      in_files[i] = (*argv)[i];
+    }
+    in_files[*argc] = NULL;
+    open_next_in_file();
+  }
+
   return;
 
 invalid_opt:
@@ -189,7 +233,7 @@ invalid_opt:
   } else {
     fprintf(stderr, "'%c': invalid option", optopt);
   }
-  fputs("; usa --help or -h for help\n", stderr);
+  fputs("; use --help or -h for help\n", stderr);
   exit(EXIT_FAILURE);
 missing_arg:
   errx(EXIT_FAILURE, "\"%s\" requires an argument\n",

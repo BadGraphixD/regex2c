@@ -22,7 +22,7 @@ pattern_matcher.o: pattern_matcher.c
 pattern.o: pattern.c
 
 pattern.c: pattern.regex
-	../regex2c <pattern.regex >pattern.c
+	../regex2c pattern.regex -o pattern.c
 
 clean:
 	rm -f *.o *.out pattern.c pattern_matcher
