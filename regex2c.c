@@ -52,6 +52,7 @@
 #include "ast2automaton.h"
 #include "automaton2c.h"
 #include "common.h"
+#include "not_enough_cli/not_enough_cli.h"
 #include "regex_parser.h"
 
 #include <err.h>
@@ -139,101 +140,72 @@ bool_t is_end(int c) {
   }
 }
 
-const struct option OPTIONS_LONG[] = {{"help", no_argument, NULL, 'h'},
-                                      {"version", no_argument, NULL, 'v'},
-                                      {"debug", no_argument, NULL, 'd'},
-                                      {"output", required_argument, NULL, 'o'},
-                                      {NULL, 0, NULL, 0}};
+struct option OPTIONS_LONG[] = {{"help", no_argument, NULL, 'h'},
+                                {"version", no_argument, NULL, 'v'},
+                                {"debug", no_argument, NULL, 'd'},
+                                {"output", required_argument, NULL, 'o'},
+                                {NULL, 0, NULL, 0}};
 
-const char *const OPTIONS_HELP[] = {
+char *OPTIONS_HELP[] = {
     ['h'] = "print this help list",
     ['v'] = "print program version",
     ['d'] = "output debug information",
     ['o'] = "set output file name",
 };
 
+char *out_file_name = NULL;
+FILE *out_file = NULL;
+bool_t output_debug_info = 0;
+
 _Noreturn static void version() {
   printf("regex2c 1.0\n");
   exit(EXIT_SUCCESS);
 }
 
-const char *prog_name;
-bool_t opts_given[ARRAY_SIZE(OPTIONS_LONG) - 1] = {0};
-FILE *out_file = NULL;
-bool_t output_debug_info = 0;
-
 _Noreturn static void usage(int status) {
   FILE *fout = status == 0 ? stdout : stderr;
-  fprintf(fout, "Usage: %s [OPTION]... [FILE]...\n", prog_name);
+  nac_print_usage_header(fout, "[OPTION]... [FILE]...");
   fprintf(fout, "Convert a regular expression into an automata in c-code.\n\n");
   fprintf(fout, "With no FILE, or when FILE is -, read standard input.\n\n");
-  print_options(status, fout);
+  nac_print_options(fout);
   exit(status);
 }
 
-static void parse_options(int *argc, char ***argv) {
-  opterr = 0;
-
-  int opt;
-  bool_t opt_help = 0;
-  bool_t opt_version = 0;
-  const char *opt_output = NULL;
-  const char *options_short = make_short_opts(OPTIONS_LONG);
-
-  for (;;) {
-    opt = getopt_long(*argc, *argv, options_short, OPTIONS_LONG, NULL);
-    if (opt == -1) {
-      break;
+void handle_option(char opt) {
+  switch (opt) {
+  case 'o':
+    out_file_name = nac_optarg_trimmed();
+    if (out_file_name[0] == '\0') {
+      nac_missing_arg('o');
     }
-    switch (opt) {
-    case 'h':
-      opt_help = 1;
-      break;
-    case 'v':
-      opt_version = 1;
-      break;
-    case 'd':
-      output_debug_info = 1;
-      break;
-    case 'o':
-      if (SKIP_WS(optarg)[0] == '\0') {
-        goto missing_arg;
-      }
-      opt_output = optarg;
-      break;
-    case ':':
-      goto missing_arg;
-    case '?':
-      goto invalid_opt;
-    }
-    opts_given[opt] = 1;
+    break;
   }
+}
 
-  free((void *)options_short);
-  options_short = NULL;
-  *argc -= optind;
-  *argv += optind;
+void parse_args(int *argc, char ***argv) {
+  nac_set_opts(**argv, OPTIONS_LONG, OPTIONS_HELP);
+  nac_simple_parse_args(argc, argv, handle_option);
 
-  opt_check_exclusive('h');
-  opt_check_exclusive('v');
+  nac_opt_check_excl("hv");
+  nac_opt_check_max_once("hvo");
 
-  if (opt_help) {
+  if (nac_get_opt('h')) {
     usage(*argc > 0 ? EXIT_FAILURE : EXIT_SUCCESS);
   }
-  if (opt_version) {
+  if (nac_get_opt('v')) {
     if (*argc > 0) {
       usage(EXIT_FAILURE);
     }
     version();
   }
 
-  if (opt_output == NULL) {
+  if (out_file_name == NULL) {
     out_file = stdout;
   } else {
-    out_file = fopen(opt_output, "w");
+    out_file = fopen(out_file_name, "w");
     if (out_file == NULL) {
       errx(EXIT_FAILURE, "Failed to open specified output file \"%s\"\n",
-           opt_output);
+           out_file_name);
     }
   }
 
@@ -246,27 +218,11 @@ static void parse_options(int *argc, char ***argv) {
     open_next_in_file();
   }
 
-  return;
-
-invalid_opt:
-  (void)0;
-  const char *invalid_opt = (*argv)[optind - 1];
-  if (invalid_opt != NULL && strncmp(invalid_opt, "--", 2) == 0) {
-    fprintf(stderr, "\"%s\": invalid option", invalid_opt + 2);
-  } else {
-    fprintf(stderr, "'%c': invalid option", optopt);
-  }
-  fputs("; use --help or -h for help\n", stderr);
-  exit(EXIT_FAILURE);
-missing_arg:
-  errx(EXIT_FAILURE, "\"%s\" requires an argument\n",
-       opt_format(opt == ':' ? optopt : opt));
+  nac_cleanup();
 }
 
 int main(int argc, char **argv) {
-  prog_name = *argv;
-  parse_options(&argc, &argv);
-
+  parse_args(&argc, &argv);
   consume_next();
   ast_t ast = consume_regex_expr();
   if (output_debug_info) {

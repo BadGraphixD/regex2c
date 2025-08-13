@@ -1,6 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Werror
 LD = ld
+LIB_TARGET = lib
 
 CDFLAGS = -pg -g
 CRFLAGS = -O3
@@ -9,15 +10,19 @@ CRFLAGS = -O3
 all: regex2c
 
 debug: CFLAGS += $(CDFLAGS)
+debug: LIB_TARGET = lib_debug
 debug: regex2c
 lib_debug: CFLAGS += $(CDFLAGS)
+lib_debug: LIB_TARGET = lib_debug
 lib_debug: lib
 release: CFLAGS += $(CRFLAGS)
+release: LIB_TARGET = lib_release
 release: regex2c
 lib_release: CFLAGS += $(CRFLAGS)
+lib_release: LIB_TARGET = lib_release
 lib_release: lib
 
-regex2c: regex2c.o regex_parser.o ast2automaton.o automaton2c.o ast.o automaton.o common.o
+regex2c: regex2c.o regex_parser.o ast2automaton.o automaton2c.o ast.o automaton.o common.o not_enough_cli/bin/lib.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 lib: regex_parser.o ast2automaton.o automaton2c.o ast.o automaton.o common.o
@@ -42,6 +47,9 @@ common.o: common.c common.h
 pattern_matcher.o: pattern_matcher.c
 pattern.o: pattern.c
 
+not_enough_cli/bin/lib.o:
+	@cd not_enough_cli && make $(LIB_TARGET)
+
 test: regex2c
 	@cd test && make
 	@echo "test/pattern_matcher has been generated"
@@ -49,3 +57,4 @@ test: regex2c
 clean:
 	rm -f *.o *.out regex2c
 	@cd test && make clean
+	@cd not_enough_cli && make clean

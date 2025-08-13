@@ -1,0 +1,3 @@
+[submodule "not_enough_cli"]
+	path = not_enough_cli
+	url = git@github.com:BadGraphixD/not_enough_cli.git

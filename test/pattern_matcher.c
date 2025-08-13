@@ -16,10 +16,10 @@ int consume_next() {
 int accept(int tag) {
   if (peek_next() == EOF) {
     // Only accept, if the whole string has been parsed
-    printf("\nAccept!\n");
+    printf("Accept!\n");
     exit(EXIT_SUCCESS);
   }
-  printf("\nCheckpoint!\n");
+  printf("Checkpoint!\n");
   return 0;
 }
 
