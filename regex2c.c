@@ -146,16 +146,16 @@ struct option OPTIONS_LONG[] = {{"help", no_argument, NULL, 'h'},
                                 {"output", required_argument, NULL, 'o'},
                                 {NULL, 0, NULL, 0}};
 
-char *OPTIONS_HELP[] = {
+static char *OPTIONS_HELP[] = {
     ['h'] = "print this help list",
     ['v'] = "print program version",
     ['d'] = "output debug information",
     ['o'] = "set output file name",
 };
 
-char *out_file_name = NULL;
-FILE *out_file = NULL;
-bool_t output_debug_info = 0;
+static char *out_file_name = NULL;
+static FILE *out_file = NULL;
+static bool_t output_debug_info = 0;
 
 _Noreturn static void version() {
   printf("regex2c 1.0\n");
@@ -171,7 +171,7 @@ _Noreturn static void usage(int status) {
   exit(status);
 }
 
-void handle_option(char opt) {
+static void handle_option(char opt) {
   switch (opt) {
   case 'o':
     out_file_name = nac_optarg_trimmed();
@@ -182,7 +182,7 @@ void handle_option(char opt) {
   }
 }
 
-void parse_args(int *argc, char ***argv) {
+static void parse_args(int *argc, char ***argv) {
   nac_set_opts(**argv, OPTIONS_LONG, OPTIONS_HELP);
   nac_simple_parse_args(argc, argv, handle_option);
 
