@@ -179,6 +179,9 @@ static void handle_option(char opt) {
       nac_missing_arg('o');
     }
     break;
+  case 'd':
+    output_debug_info = 1;
+    break;
   }
 }
 
