@@ -258,6 +258,15 @@ void connect_dfa_states(dfa_state_t *start, dfa_state_t *end,
     list = list->next;
   }
   list = malloc(sizeof(dfa_edge_list_t));
+
+  // Fuck this line (cost me my sanity and 2 days)
+  memset(list, 0, sizeof(dfa_edge_list_t));
+
+  //                     (
+  //    __________       )\
+  //   /         /\______{,}
+  //   \_________\/
+
   list->next = start->outgoing;
   list->edge.target = end->index;
   list->edge.transitions[terminal] = 1;
