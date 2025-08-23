@@ -2,6 +2,7 @@
 #include "common.h"
 
 #include <err.h>
+#include <stdlib.h>
 
 void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
                                char *next_name, char *acc_name, char *rej_name,
@@ -66,6 +67,8 @@ void print_automaton_to_c_code(automaton_t automaton, char *parser_name,
     fprint_indent(6, fout);
     fprintf(fout, "}\n");
   }
+
+  free(stm);
 
   fprint_indent(4, fout);
   fprintf(fout, "}\n");

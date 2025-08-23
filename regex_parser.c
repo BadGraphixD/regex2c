@@ -159,6 +159,7 @@ ast_t consume_reference() {
                name.data);
       }
       ast.reference = ref;
+      free(name.data);
       return ast;
     default:
       reject("regular definition reference: unexpected char: '%s'",

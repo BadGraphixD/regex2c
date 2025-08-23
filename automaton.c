@@ -325,6 +325,8 @@ automaton_t determinize(automaton_t *automaton) {
             delete_dfa_state(new_state);
           }
           connect_dfa_states(&d_states_iter->state, existing_state, t);
+        } else {
+          delete_dfa_state(new_state);
         }
       }
       d_states_iter = d_states_iter->next;
@@ -342,6 +344,12 @@ bool_t nodes_equivalent(bool_t *stm, int node0, int node1, int *partition) {
   for (int t = 0; t < 256; t++) {
     int dest0 = stm[node0 * 256 + t];
     int dest1 = stm[node1 * 256 + t];
+    if (dest0 == dest1) {
+      continue;
+    }
+    if (dest0 == -1 || dest1 == -1) {
+      return 0;
+    }
     if (partition[dest0] != partition[dest1]) {
       return 0;
     }
