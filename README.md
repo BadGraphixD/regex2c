@@ -18,7 +18,7 @@ build the executable `test/pattern_matcher`, which accepts strings from `stdin`,
 The `regex2c` executable expects a non-empty regex-string from `stdin` and prints c code to `stdout`. It uses the following steps to convert the expression:
 
 1. Parse the regex and convert to an AST
-2. Convert the AST to a NFA (structures such as repititions and optionals are converted by inserting epsilon-transitions)
-3. Convert the NFA to a DFA (making it deterministic)
-4. Minimize the DFA (using Moore's algorithm)
+2. Convert the AST to a NFA using Thompson's algorithm (structures such as repititions and optionals are converted by inserting epsilon-transitions)
+3. Convert the NFA to a DFA using powerset construction (making it deterministic)
+4. Minimize the DFA using Moore's algorithm
 5. Convert the DFA into c code, which can be compiled and linked with other code
